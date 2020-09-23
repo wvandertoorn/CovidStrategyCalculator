@@ -32,7 +32,7 @@ protected:
     std::vector<int> t_test{};
 
     // parameters
-    std::vector<float> residence_times = {4., 3.76, 4.81, 5.};
+    std::vector<float> residence_times = {1., 1., 4.81, .9};
     float pre_test_infect_prob{1.};
     float percentage_asymt{.2};
     float pcr_sensitivity{.70};

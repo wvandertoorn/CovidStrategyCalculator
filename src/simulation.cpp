@@ -254,10 +254,11 @@ QTableWidget* Simulation::create_table(){
 
     QTableWidget *table = new QTableWidget(1, n_time);
     table->setHorizontalHeaderLabels(h_labels);
-    table->setVerticalHeaderLabels((QStringList() << "Infectious and detectable"));
+    table->setVerticalHeaderLabels((QStringList() << "Risk posing and detectable"));
 
     for (int i = 0; i< n_time; ++i){
-        table->setItem(0, i, new QTableWidgetItem(QString::number(result_matrix(i, Eigen::seq(1,2)).sum()
+        table->setItem(0, i, new QTableWidgetItem(QString::number((1-pcr_specificity) * result_matrix(i, 0) +
+                                                                   result_matrix(i, Eigen::seq(1,2)).sum()
                                                                   * pcr_sensitivity * 100, 'f', 2) + "%"));
 
 
@@ -276,7 +277,7 @@ void Simulation::create_result_log(){
     table->setHorizontalHeaderLabels((QStringList() << "time passed (days)"
                                                     << "quarantaine (days)"
                                                     << "test moments (days)"
-                                                    << "residual risk (%)"
+                                                    << "risk reduction (%)"
                                                     << "risk reduction (factor)"));
 
     write_row_result_log(table);
@@ -304,7 +305,7 @@ void Simulation::write_row_result_log(QTableWidget *table){
     }
 
     float result = calculate_strategy_result();
-    table->setItem(0,3, new QTableWidgetItem(QString::number(result*100, 'f', 2)));
+    table->setItem(0,3, new QTableWidgetItem(QString::number((pre_test_infect_prob-result)/pre_test_infect_prob*100, 'f', 2)));
     table->setItem(0,4, new QTableWidgetItem(QString::number(pre_test_infect_prob/result, 'f', 2)));
 
     for (int i=0; i<5; ++i){
@@ -357,14 +358,14 @@ void Simulation::output_results(){
         delete hb;
     }
     else {
-        m_parent->ui->residual_risk->setText("Residual risk:");
-        m_parent->ui->risk_reduction->setText("Risk reduction:");
+        m_parent->ui->residual_risk->setText("Risk reduction [%]:");
+        m_parent->ui->risk_reduction->setText("Risk reduction [factor]:");
     }
     m_parent->ui->results->setLayout(layout);
     m_parent->ui->results->update();
 
     float result = calculate_strategy_result();
-    m_parent->ui->result_residual_risk->setText(QString::number(result*100, 'f', 2) + "%");
+    m_parent->ui->result_residual_risk->setText(QString::number((pre_test_infect_prob-result)/pre_test_infect_prob*100, 'f', 2));
     m_parent->ui->result_risk_reduction->setText(QString::number(pre_test_infect_prob/result, 'f', 2));
 
     if (!m_parent->ui->result_log->layout()){
