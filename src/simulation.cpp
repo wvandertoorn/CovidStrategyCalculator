@@ -1,19 +1,20 @@
 #include "simulation.h"
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
 
 #include <Eigen/Dense>
 #include <unsupported/Eigen/MatrixFunctions>
 
 #include <QVBoxLayout>
-#include <QTableWidget>
-#include <QDesktopWidget>
 #include <QHeaderView>
 
 #include <QtCharts/QChartView>
 #include <QtCharts/QChart>
+#include <QtCharts/QCandlestickSeries>
+#include <QtCharts/QCandlestickSet>
 #include <QtCharts/QLineSeries>
+#include <QtCharts/QLegendMarker>
 #include <QtCharts/QValueAxis>
+#include <QtCharts/QBarCategoryAxis>
 
 std::vector<int> Simulation::sub_compartments = {1,1,11,1,1};
 int Simulation::nr_compartments = 15;
@@ -36,23 +37,32 @@ Simulation::Simulation(MainWindow *parent) : QObject(parent)
 void Simulation::collect_data(MainWindow *parent)
 {
     // input
-    time_passed_known = parent->ui->checkBox_known->isChecked();
-    if (time_passed_known){
-        time_passed = parent->ui->input_timepassed->value();
-    } else {time_passed = 0;}
+    time_passed = parent->time_passed->value();
     pre_test_infect_prob = 1;
-    quarantaine = parent->ui->input_quarantaine->value();
+    quarantine = parent->quarantine->value();
 
     // parameters
-    residence_times.clear();
-    residence_times.push_back(parent->ui->param_time_predetect->value());
-    residence_times.push_back(parent->ui->param_time_presymp->value());
-    residence_times.push_back(parent->ui->param_time_infect->value());
-    residence_times.push_back(parent->ui->param_time_post->value());
+    residence_times_mean.clear();
+    residence_times_mean.push_back(parent->pred_mean->value()/100 * parent->inc_mean->value());
+    residence_times_mean.push_back((1- parent->pred_mean->value()/100) * parent->inc_mean->value());
+    residence_times_mean.push_back(parent->symp_mean->value());
+    residence_times_mean.push_back(parent->post_mean->value());
 
-    percentage_asymt = parent->ui->param_perc_asym->value() /100;
-    pcr_sensitivity = parent->ui->param_pcr_sens->value() /100;
-    pcr_specificity = parent->ui->param_pcr_spec->value() /100;
+    residence_times_lev.clear();
+    residence_times_lev.push_back(parent->pred_mean->value()/100 * parent->inc_lev->value());
+    residence_times_lev.push_back((1- parent->pred_mean->value()/100) * parent->inc_lev->value());
+    residence_times_lev.push_back(parent->symp_lev->value());
+    residence_times_lev.push_back(parent->post_lev->value());
+
+    residence_times_uev.clear();
+    residence_times_uev.push_back(parent->pred_mean->value()/100 * parent->inc_uev->value());
+    residence_times_uev.push_back((1- parent->pred_mean->value()/100) * parent->inc_uev->value());
+    residence_times_uev.push_back(parent->symp_uev->value());
+    residence_times_uev.push_back(parent->post_uev->value());
+
+    percentage_asymt = parent->asymp_mean->value() /100;
+    pcr_sensitivity = parent->pcr_sens->value() /100;
+    pcr_specificity = parent->pcr_spec->value() /100;
 
     t_test = collect_t_test(parent->test_boxes);
 }
@@ -136,7 +146,6 @@ Eigen::MatrixXf  Simulation::calc_X(float delay,
 
     return x_analytical;
 }
-
 Eigen::MatrixXf Simulation::assemble_phases(Eigen::MatrixXf X_,
                                             std::vector<int> comp
                                             ){
@@ -153,85 +162,60 @@ Eigen::MatrixXf Simulation::assemble_phases(Eigen::MatrixXf X_,
     }
     return assembled;
 }
-
 QtCharts::QChartView* Simulation::create_plot()
 {
-    int n_time = result_matrix.rows();
-
-    std::vector<QString> species_names{"incubation",
-                                       "pre-(a)symptomatic",
-                                       "symptomatic",
-                                       "post-symptomatic"};
-    std::vector<QColor> species_colors{QColor(173, 245, 66, 255),
-                                       QColor(245, 188, 66, 255),
-                                       QColor(66, 179, 245, 255),
-                                       QColor(255, 77, 169, 255)};
-
-    QtCharts::QLineSeries *asymptomatic = new QtCharts::QLineSeries();
-    asymptomatic->setName(tr("asymptomatic"));
-    asymptomatic->setPen(Qt::DashLine);
-    asymptomatic->setColor(QColor(30, 0, 227, 255));
-
+    int n_time = result_matrix_mean.rows();
     QtCharts::QChart *chart = new QtCharts::QChart();
 
-    for (int i=0; i<4; ++i){
-        QtCharts::QLineSeries *series = new QtCharts::QLineSeries();
-        series->setName(species_names.at(i));
-        series->setPen(Qt::DashLine);
-        series->setColor(species_colors.at(i));
-
-        if (i==2){
-            // symptomatic, split/scale by proportion asymptomatic
-            for (int j=0; j<n_time; ++j){
-                series->append(j - time_passed, (1- percentage_asymt)* result_matrix(j, i));
-                asymptomatic->append(j - time_passed, (percentage_asymt)* result_matrix(j, i));
-            }
-            chart->addSeries(series);
-            chart->addSeries(asymptomatic);
-        }
-        else {
-            for (int j=0; j<n_time; ++j){
-                series->append(j - time_passed, result_matrix(j, i));
-            }
-            chart->addSeries(series);
-        }
-    }
-
-    // plot categories
-    QPen fat_pen;
-    fat_pen.setWidth(3);
-    QtCharts::QLineSeries *potential = new QtCharts::QLineSeries();
-    potential->setName("Is or will become infectious");
-
-    potential->setPen(fat_pen);
-    potential->setColor("black");
+    QtCharts::QCandlestickSeries *risk_error = new QtCharts::QCandlestickSeries();
+    risk_error->setName("Is or will become infectious");
+    QPen red_pen(Qt::red,3);
+    QBrush red_brush(Qt::red);
+    risk_error->setPen(red_pen);
+    risk_error->setBrush(red_brush);
     for (int j=0; j<n_time; ++j){
-        potential->append(j - time_passed, result_matrix(j, Eigen::seq(0,2)).sum());
-    }
-    chart->addSeries(potential);
+        float lev = result_matrix_lev(j, Eigen::seq(0,2)).sum();
+        float uev = result_matrix_uev(j, Eigen::seq(0,2)).sum();
+        float m = result_matrix_mean(j, Eigen::seq(0,2)).sum();
 
-    QtCharts::QLineSeries *infectious = new QtCharts::QLineSeries();
-    infectious->setName("Infectious & detectable");
-    infectious->setPen(fat_pen);
-    infectious->setColor("red");
+        QtCharts::QCandlestickSet *set = new QtCharts::QCandlestickSet(m,uev,lev,m, j-time_passed);
+        risk_error->append(set);
+    }
+    chart->addSeries(risk_error);
+
+    QtCharts::QCandlestickSeries *detectable_error = new QtCharts::QCandlestickSeries();
+    detectable_error->setName("Detectable");
+    QPen black_pen(Qt::black,3);
+    QBrush black_brush(Qt::black);
+    detectable_error->setPen(black_pen);
+    detectable_error->setBrush(black_brush);
     for (int j=0; j<n_time; ++j){
-        infectious->append(j - time_passed, result_matrix(j, Eigen::seq(1,2)).sum()*pcr_sensitivity);
-    }
-    chart->addSeries(infectious);
+        float lev = result_matrix_lev(j, Eigen::seq(1,2)).sum()*pcr_sensitivity;
+        float uev = result_matrix_uev(j, Eigen::seq(1,2)).sum()*pcr_sensitivity;
+        float m = result_matrix_mean(j, Eigen::seq(1,2)).sum()*pcr_sensitivity;
 
-    chart->createDefaultAxes();
-    QtCharts::QValueAxis *axisX = new QtCharts::QValueAxis;
-    axisX->setRange(-std::ceil(time_passed), quarantaine);
-    int tick_count = std::ceil(time_passed) + quarantaine + 1;
-    axisX->setTickCount(tick_count);
-    axisX->setMinorTickCount(1);
-    axisX->setLabelFormat(tr("%i"));
-    axisX->setTitleText(tr("Day"));
-    chart->setAxisX(axisX);
-
-    for (auto axis : chart->axes(Qt::Vertical)){
-        axis->setTitleText("Probability");
+        QtCharts::QCandlestickSet *set = new QtCharts::QCandlestickSet(m,uev,lev,m, j-time_passed);
+        detectable_error->append(set);
     }
+    chart->addSeries(detectable_error);
+
+    QStringList categories;
+    for (int j=0; j<n_time; ++j){
+        categories << QString::number(j-time_passed);
+    }
+    QtCharts::QBarCategoryAxis *axisX_cat = new QtCharts::QBarCategoryAxis;
+    axisX_cat->setCategories(categories);
+    chart->addAxis(axisX_cat, Qt::AlignBottom);
+    axisX_cat->setTitleText("Day");
+    risk_error->attachAxis(axisX_cat);
+    detectable_error->attachAxis(axisX_cat);
+
+    QtCharts::QValueAxis *axisY = new QtCharts::QValueAxis();
+    chart->addAxis(axisY, Qt::AlignLeft);
+    risk_error->attachAxis(axisY);
+    detectable_error->attachAxis(axisY);
+    axisY->setRange(0, 1);
+    axisY->setTitleText("Probability");
 
     chart->legend()->show();
     QFont f("Helvetica", 10);
@@ -244,7 +228,7 @@ QtCharts::QChartView* Simulation::create_plot()
 }
 
 QTableWidget* Simulation::create_table(){
-    int n_time = result_matrix.rows();
+    int n_time = result_matrix_mean.rows();
     int offset = time_passed;
 
     QStringList h_labels;
@@ -257,16 +241,24 @@ QTableWidget* Simulation::create_table(){
     table->setVerticalHeaderLabels((QStringList() << "Risk posing and detectable"));
 
     for (int i = 0; i< n_time; ++i){
-        table->setItem(0, i, new QTableWidgetItem(QString::number((1-pcr_specificity) * result_matrix(i, 0) +
-                                                                   result_matrix(i, Eigen::seq(1,2)).sum()
-                                                                  * pcr_sensitivity * 100, 'f', 2) + "%"));
+        float perc_mean = (1-pcr_specificity) * result_matrix_mean(i, 0) +
+                          result_matrix_mean(i, Eigen::seq(1,2)).sum()
+                          * pcr_sensitivity * 100;
+        float perc_lev = (1-pcr_specificity) * result_matrix_lev(i, 0) +
+                          result_matrix_lev(i, Eigen::seq(1,2)).sum()
+                          * pcr_sensitivity * 100;
+        float perc_uev = (1-pcr_specificity) * result_matrix_uev(i, 0) +
+                          result_matrix_uev(i, Eigen::seq(1,2)).sum()
+                          * pcr_sensitivity * 100;
+        table->setItem(0, i, new QTableWidgetItem(QString::number(perc_mean, 'f', 2) + "%"
+                                                  + "  (" + QString::number(perc_uev, 'f', 2)
+                                                  + ", " + QString::number(perc_lev, 'f', 2) + ")"));
 
 
         table->item(0,i)->setFlags(table->item(0,i)->flags() &  ~Qt::ItemIsEditable);
     }
-    if (n_time < 20){
-        table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    }
+    table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
     return table;
 }
 
@@ -274,24 +266,32 @@ void Simulation::create_result_log(){
     QLabel *label = new QLabel(tr("Result log"));
 
     QTableWidget *table = new QTableWidget(1, 5);
-    table->setHorizontalHeaderLabels((QStringList() << "time passed (days)"
-                                                    << "quarantaine (days)"
-                                                    << "test moments (days)"
-                                                    << "risk reduction (%)"
-                                                    << "risk reduction (factor)"));
+    table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    table->setHorizontalHeaderLabels((QStringList() << "time passed"
+                                                    << "quarantine"
+                                                    << "test"
+                                                    << "risk reduction [%]"
+                                                    << "risk reduction [factor]"));
 
     write_row_result_log(table);
-    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
+    connect(
+        table->horizontalHeader(),
+        SIGNAL(sectionResized(int, int, int)),
+        table,
+        SLOT(resizeRowsToContents()));
 
     QVBoxLayout *layout = new QVBoxLayout;
     layout->addWidget(label,0);
     layout->addWidget(table,90);
 
-    m_parent->ui->result_log->setLayout(layout);
+    m_parent->log->setLayout(layout);
 }
+
 void Simulation::write_row_result_log(QTableWidget *table){
     table->setItem(0,0, new QTableWidgetItem(QString::number(time_passed)));
-    table->setItem(0,1, new QTableWidgetItem(QString::number(quarantaine)));
+    table->setItem(0,1, new QTableWidgetItem(QString::number(quarantine)));
     if (t_test.size()){
         QString days{};
         for (int day : t_test){
@@ -304,40 +304,46 @@ void Simulation::write_row_result_log(QTableWidget *table){
         table->setItem(0,2, new QTableWidgetItem());
     }
 
-    float result = calculate_strategy_result();
-    table->setItem(0,3, new QTableWidgetItem(QString::number((pre_test_infect_prob-result)/pre_test_infect_prob*100, 'f', 2)));
-    table->setItem(0,4, new QTableWidgetItem(QString::number(pre_test_infect_prob/result, 'f', 2)));
+    table->setItem(0,3, new QTableWidgetItem(QString::number((pre_test_infect_prob-calculate_strategy_result(result_matrix_mean))/pre_test_infect_prob*100, 'f', 2)
+                                             + "  (" + QString::number((pre_test_infect_prob-calculate_strategy_result(result_matrix_uev))/pre_test_infect_prob*100, 'f', 2)
+                                             + ", " + QString::number((pre_test_infect_prob-calculate_strategy_result(result_matrix_lev))/pre_test_infect_prob*100, 'f', 2)
+                                             + ")" ));
+    table->setItem(0,4, new QTableWidgetItem(QString::number(pre_test_infect_prob/calculate_strategy_result(result_matrix_mean), 'f', 2)
+                                             + "  (" + QString::number(pre_test_infect_prob/calculate_strategy_result(result_matrix_uev), 'f', 2)
+                                             + ", " + QString::number(pre_test_infect_prob/calculate_strategy_result(result_matrix_lev), 'f', 2)
+                                             + ")" ));
 
     for (int i=0; i<5; ++i){
         table->item(0,i)->setFlags(table->item(0,i)->flags() &  ~Qt::ItemIsEditable);
     }
 }
+
 void Simulation::update_result_log(){
-    QWidget *widget = m_parent->ui->result_log->layout()->takeAt(1)->widget();
+    QWidget *widget = m_parent->log->layout()->takeAt(1)->widget();
     QTableWidget* table = qobject_cast<QTableWidget*>(widget);
     table->insertRow(0);
     write_row_result_log(table);
 
-    m_parent->ui->result_log->layout()->addWidget(table);
+    m_parent->log->layout()->addWidget(table);
 }
 
-float Simulation::calculate_strategy_result(){
+float Simulation::calculate_strategy_result(Eigen::MatrixXf matrix){
     float risk = 1.;
 
     if (t_test.size()){
         for (int day : t_test){
-            risk = risk * (1.-pcr_sensitivity) * result_matrix(day, Eigen::seq(1,2)).sum() +
-                   risk * pcr_specificity * result_matrix(day, 0);
+            risk = risk * (1.-pcr_sensitivity) * matrix(day, Eigen::seq(1,2)).sum() +
+                   risk * pcr_specificity * matrix(day, 0);
         }
-        if (t_test.back() < result_matrix.rows()-1){
-            risk = risk * result_matrix(Eigen::last, Eigen::seq(0,2)).sum() /result_matrix(t_test.back(), Eigen::seq(0,2)).sum();
+        if (t_test.back() < matrix.rows()-1){
+            risk = risk * matrix(Eigen::last, Eigen::seq(0,2)).sum() /matrix(t_test.back(), Eigen::seq(0,2)).sum();
         }
     }
-    else risk = result_matrix(Eigen::last, Eigen::seq(0,2)).sum();
+    else risk = matrix(Eigen::last, Eigen::seq(0,2)).sum();
     return risk;
 }
 
-void Simulation::output_results(){
+void Simulation::output_results(){    
     QtCharts::QChartView* plot = create_plot();
     QTableWidget* table = create_table();
 
@@ -349,26 +355,18 @@ void Simulation::output_results(){
     layout->addWidget(table, 8);
 
     // if previous layout exists, delete
-    if (m_parent->ui->results->layout()){
-        QLayout *hb = m_parent->ui->results->layout();
+    if (m_parent->chart->layout()){
+        QLayout *hb = m_parent->chart->layout();
         while(!hb->isEmpty()) {
             QWidget *w = hb->takeAt(0)->widget();
             delete w;
         }
         delete hb;
     }
-    else {
-        m_parent->ui->residual_risk->setText("Risk reduction [%]:");
-        m_parent->ui->risk_reduction->setText("Risk reduction [factor]:");
-    }
-    m_parent->ui->results->setLayout(layout);
-    m_parent->ui->results->update();
+    m_parent->chart->setLayout(layout);
+    m_parent->chart->update();
 
-    float result = calculate_strategy_result();
-    m_parent->ui->result_residual_risk->setText(QString::number((pre_test_infect_prob-result)/pre_test_infect_prob*100, 'f', 2));
-    m_parent->ui->result_risk_reduction->setText(QString::number(pre_test_infect_prob/result, 'f', 2));
-
-    if (!m_parent->ui->result_log->layout()){
+    if (!m_parent->log->layout()){
         create_result_log();
     }
     else {
@@ -378,10 +376,28 @@ void Simulation::output_results(){
 }
 
 void Simulation::run(){
-    rates = calc_rates(residence_times, sub_compartments);
+    Eigen::VectorXf rates;
+    Eigen::MatrixXf S;
+    Eigen::MatrixXf A;
+    Eigen::MatrixXf X;
+
+    rates = calc_rates(residence_times_mean, sub_compartments);
     S = calc_S(nr_compartments);
     A = calc_A(S, rates);
-    X = calc_X(time_passed, quarantaine, A, initial_states);
-    result_matrix = assemble_phases(X, sub_compartments);
+    X = calc_X(time_passed, quarantine, A, initial_states);
+    result_matrix_mean = assemble_phases(X, sub_compartments);
+
+    rates = calc_rates(residence_times_lev, sub_compartments);
+    S = calc_S(nr_compartments);
+    A = calc_A(S, rates);
+    X = calc_X(time_passed, quarantine, A, initial_states);
+    result_matrix_lev = assemble_phases(X, sub_compartments);
+
+    rates = calc_rates(residence_times_uev, sub_compartments);
+    S = calc_S(nr_compartments);
+    A = calc_A(S, rates);
+    X = calc_X(time_passed, quarantine, A, initial_states);
+    result_matrix_uev = assemble_phases(X, sub_compartments);
+
     output_results();
 }
