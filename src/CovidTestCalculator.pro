@@ -22,7 +22,6 @@ HEADERS += \
         mainwindow.h \
     simulation.h
 
-FORMS += \
-        mainwindow.ui
+FORMS +=
 
 RESOURCES +=

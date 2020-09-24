@@ -28,11 +28,13 @@ protected:
 
     bool time_passed_known{false};
     int time_passed{0};
-    int quarantaine{11};
+    int quarantine{11};
     std::vector<int> t_test{};
 
     // parameters
-    std::vector<float> residence_times = {1., 1., 4.81, .9};
+    std::vector<float> residence_times_mean = {2., 3.5, 4.81, 5};
+    std::vector<float> residence_times_lev = {1., 1.5, 2.81, 2};
+    std::vector<float> residence_times_uev = {5., 7.5, 10.81, 8};
     float pre_test_infect_prob{1.};
     float percentage_asymt{.2};
     float pcr_sensitivity{.70};
@@ -40,11 +42,9 @@ protected:
 
     // simulation
     Eigen::VectorXf initial_states;
-    Eigen::VectorXf rates;
-    Eigen::MatrixXf S;
-    Eigen::MatrixXf A;
-    Eigen::MatrixXf X;
-    Eigen::MatrixXf result_matrix;
+    Eigen::MatrixXf result_matrix_mean;
+    Eigen::MatrixXf result_matrix_lev;
+    Eigen::MatrixXf result_matrix_uev;
 
     void collect_data(MainWindow *parent);
     std::vector<int> collect_t_test(std::vector<QCheckBox*> boxes);
@@ -62,7 +62,7 @@ protected:
 
     QtCharts::QChartView* create_plot();
     QTableWidget* create_table();
-    float calculate_strategy_result();
+    float calculate_strategy_result(Eigen::MatrixXf matrix);
     void create_result_log();
     void write_row_result_log(QTableWidget*);
     void update_result_log();
