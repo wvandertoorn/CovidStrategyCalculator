@@ -110,11 +110,11 @@ QWidget *MainWindow::create_input_tab()
 
 QWidget* MainWindow::create_parameter_tab()
 {
-    QLabel *label_tau_inc = new QLabel(tr("Duration of incubation period [days]:"));
+    QLabel *label_tau_inc = new QLabel(tr("Duration of incubation period [day]:"));
     QLabel *label_percentage_predetect = new QLabel(tr("Percentage thereof pre-detectable [%]:"));
-    QLabel *label_tau_symp = new QLabel(tr("Duration of symptomatic period [days]:"));
+    QLabel *label_tau_symp = new QLabel(tr("Duration of symptomatic period [day]:"));
     QLabel *label_asymp = new QLabel(tr("Percentage of asymptomatic infections [%]:"));
-    QLabel *label_tau_post = new QLabel(tr("Duration of post-infectious, detectable period [days]:"));
+    QLabel *label_tau_post = new QLabel(tr("Duration of post-symptomatic, detectable period [day]:"));
 
     QLabel *label_pcr_sens = new QLabel(tr("PCR-test sensitivity [%]"));
     QLabel *label_pcr_spec = new QLabel(tr("PCR-test specificity [%]"));

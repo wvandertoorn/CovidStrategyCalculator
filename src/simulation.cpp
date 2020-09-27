@@ -16,6 +16,9 @@
 #include <QtCharts/QValueAxis>
 #include <QtCharts/QBarCategoryAxis>
 
+#include <QtCharts/QBoxPlotSeries>
+#include <QtCharts/QBoxSet>
+
 std::vector<int> Simulation::sub_compartments = {1,1,11,1,1};
 int Simulation::nr_compartments = 15;
 
@@ -167,34 +170,38 @@ QtCharts::QChartView* Simulation::create_plot()
     int n_time = result_matrix_mean.rows();
     QtCharts::QChart *chart = new QtCharts::QChart();
 
-    QtCharts::QCandlestickSeries *risk_error = new QtCharts::QCandlestickSeries();
-    risk_error->setName("Is or will become infectious");
-    QPen red_pen(Qt::red,3);
+//    QtCharts::QCandlestickSeries *risk_error = new QtCharts::QCandlestickSeries();
+    QtCharts::QBoxPlotSeries *risk_error = new QtCharts::QBoxPlotSeries();
+    risk_error->setName("Is- or will become infectious");
+    QPen red_pen(Qt::red);
     QBrush red_brush(Qt::red);
     risk_error->setPen(red_pen);
     risk_error->setBrush(red_brush);
     for (int j=0; j<n_time; ++j){
-        float lev = result_matrix_lev(j, Eigen::seq(0,2)).sum();
-        float uev = result_matrix_uev(j, Eigen::seq(0,2)).sum();
-        float m = result_matrix_mean(j, Eigen::seq(0,2)).sum();
+        float lev = result_matrix_lev(j, Eigen::seq(0,1)).sum() + result_matrix_lev(j, 2);
+        float uev = result_matrix_uev(j, Eigen::seq(0,1)).sum() + result_matrix_uev(j, 2);
+        float m = result_matrix_mean(j, Eigen::seq(0,1)).sum() + result_matrix_mean(j, 2);
 
-        QtCharts::QCandlestickSet *set = new QtCharts::QCandlestickSet(m,uev,lev,m, j-time_passed);
+        QtCharts::QBoxSet *set = new QtCharts::QBoxSet(lev,m,m,m,uev, QString::number(j-time_passed));
+//        QtCharts::QCandlestickSet *set = new QtCharts::QCandlestickSet(m,uev,lev,m, j-time_passed);
         risk_error->append(set);
     }
     chart->addSeries(risk_error);
 
-    QtCharts::QCandlestickSeries *detectable_error = new QtCharts::QCandlestickSeries();
+//    QtCharts::QCandlestickSeries *detectable_error = new QtCharts::QCandlestickSeries();
+    QtCharts::QBoxPlotSeries *detectable_error = new QtCharts::QBoxPlotSeries();
     detectable_error->setName("Detectable");
-    QPen black_pen(Qt::black,3);
+    QPen black_pen(Qt::black);
     QBrush black_brush(Qt::black);
     detectable_error->setPen(black_pen);
     detectable_error->setBrush(black_brush);
     for (int j=0; j<n_time; ++j){
-        float lev = result_matrix_lev(j, Eigen::seq(1,2)).sum()*pcr_sensitivity;
-        float uev = result_matrix_uev(j, Eigen::seq(1,2)).sum()*pcr_sensitivity;
-        float m = result_matrix_mean(j, Eigen::seq(1,2)).sum()*pcr_sensitivity;
+        float lev = (result_matrix_lev(j, 1) + result_matrix_lev(j, 2)) *pcr_sensitivity;
+        float uev = (result_matrix_uev(j, 1) + result_matrix_uev(j, 2)) *pcr_sensitivity;
+        float m = (result_matrix_mean(j, 1) + result_matrix_mean(j, 2)) *pcr_sensitivity;
 
-        QtCharts::QCandlestickSet *set = new QtCharts::QCandlestickSet(m,uev,lev,m, j-time_passed);
+//        QtCharts::QCandlestickSet *set = new QtCharts::QCandlestickSet(m,uev,lev,m, j-time_passed);
+        QtCharts::QBoxSet *set = new QtCharts::QBoxSet(lev,m,m,m,uev, QString::number(j-time_passed));
         detectable_error->append(set);
     }
     chart->addSeries(detectable_error);
@@ -238,17 +245,17 @@ QTableWidget* Simulation::create_table(){
 
     QTableWidget *table = new QTableWidget(1, n_time);
     table->setHorizontalHeaderLabels(h_labels);
-    table->setVerticalHeaderLabels((QStringList() << "Risk posing and detectable"));
+    table->setVerticalHeaderLabels((QStringList() << "Detectable"));
 
     for (int i = 0; i< n_time; ++i){
         float perc_mean = (1-pcr_specificity) * result_matrix_mean(i, 0) +
-                          result_matrix_mean(i, Eigen::seq(1,2)).sum()
+                          (result_matrix_mean(i, 1) + result_matrix_mean(i, 2))
                           * pcr_sensitivity * 100;
         float perc_lev = (1-pcr_specificity) * result_matrix_lev(i, 0) +
-                          result_matrix_lev(i, Eigen::seq(1,2)).sum()
+                          (result_matrix_lev(i, 1) +  result_matrix_lev(i, 2))
                           * pcr_sensitivity * 100;
         float perc_uev = (1-pcr_specificity) * result_matrix_uev(i, 0) +
-                          result_matrix_uev(i, Eigen::seq(1,2)).sum()
+                          (result_matrix_uev(i, 1) + result_matrix_uev(i, 2))
                           * pcr_sensitivity * 100;
         table->setItem(0, i, new QTableWidgetItem(QString::number(perc_mean, 'f', 2) + "%"
                                                   + "  (" + QString::number(perc_uev, 'f', 2)
@@ -267,9 +274,9 @@ void Simulation::create_result_log(){
 
     QTableWidget *table = new QTableWidget(1, 5);
     table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    table->setHorizontalHeaderLabels((QStringList() << "time passed"
-                                                    << "quarantine"
-                                                    << "test"
+    table->setHorizontalHeaderLabels((QStringList() << "time passed [day]"
+                                                    << "quarantine [day]"
+                                                    << "test [day]"
                                                     << "risk reduction [%]"
                                                     << "risk reduction [factor]"));
 
@@ -332,14 +339,14 @@ float Simulation::calculate_strategy_result(Eigen::MatrixXf matrix){
 
     if (t_test.size()){
         for (int day : t_test){
-            risk = risk * (1.-pcr_sensitivity) * matrix(day, Eigen::seq(1,2)).sum() +
+            risk = risk * (1.-pcr_sensitivity) * ( matrix(day, 1) + percentage_asymt * matrix(day, 2) ) +
                    risk * pcr_specificity * matrix(day, 0);
         }
         if (t_test.back() < matrix.rows()-1){
-            risk = risk * matrix(Eigen::last, Eigen::seq(0,2)).sum() /matrix(t_test.back(), Eigen::seq(0,2)).sum();
+            risk = risk * (matrix(Eigen::last, Eigen::seq(0,1)).sum()+ percentage_asymt * matrix(Eigen::last, 2)) / (matrix(t_test.back(), Eigen::seq(0,1)).sum() + percentage_asymt * matrix(t_test.back(), 2));
         }
     }
-    else risk = matrix(Eigen::last, Eigen::seq(0,2)).sum();
+    else risk = matrix(Eigen::last, Eigen::seq(0,1)).sum() + percentage_asymt * matrix(Eigen::last, 2);
     return risk;
 }
 
