@@ -169,7 +169,7 @@ Eigen::MatrixXf Simulation::assemble_phases(Eigen::MatrixXf X,
     for (int i=0; i<4; ++i)
     {
         assembled(Eigen::all, i) = X(Eigen::all, Eigen::seq(col_counter,
-                                                             col_counter + comp.at(i) -1))
+                                                            col_counter + comp.at(i) -1))
                                     .rowwise()
                                     .sum();
         col_counter = col_counter + comp.at(i);
