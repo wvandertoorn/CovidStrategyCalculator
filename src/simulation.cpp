@@ -19,8 +19,8 @@
 #include <QtCharts/QBoxPlotSeries>
 #include <QtCharts/QBoxSet>
 
-std::vector<int> Simulation::sub_compartments = {1,1,11,1,1};
-int Simulation::nr_compartments = 15;
+std::vector<int> Simulation::sub_compartments = {5,1,17,1,1};
+int Simulation::nr_compartments = 25;
 
 Simulation::Simulation(MainWindow *parent) : QObject(parent)
 {
