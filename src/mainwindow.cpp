@@ -112,6 +112,7 @@ QWidget *MainWindow::initialize_tab_input()
 
 QWidget* MainWindow::initialize_tab_parameters()
 {
+    // variables
     QLabel *label_tau_inc = new QLabel(tr("Duration of incubation period [day]:"));
     QLabel *label_percentage_predetect = new QLabel(tr("Percentage thereof pre-detectable [%]:"));
     QLabel *label_tau_symp = new QLabel(tr("Duration of symptomatic period [day]:"));
@@ -121,9 +122,9 @@ QWidget* MainWindow::initialize_tab_parameters()
     QLabel *label_pcr_sens = new QLabel(tr("PCR-test sensitivity [%]"));
     QLabel *label_pcr_spec = new QLabel(tr("PCR-test specificity [%]"));
 
-    QLabel *mean = new QLabel(tr("Mean"));
-    QLabel *lev = new QLabel(tr("Lower extreme value"));
-    QLabel *uev = new QLabel(tr("Upper extreme value"));
+    QLabel *label_mean = new QLabel(tr("Mean"));
+    QLabel *label_lev = new QLabel(tr("Lower extreme value"));
+    QLabel *label_uev = new QLabel(tr("Upper extreme value"));
 
     inc_mean = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 5.8);
     inc_lev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 5);
@@ -144,38 +145,42 @@ QWidget* MainWindow::initialize_tab_parameters()
     pcr_sens = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 70);
     pcr_spec = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 99.5);
 
+    // layout
     QGridLayout *param_tab_layout = new QGridLayout;
-    param_tab_layout->addWidget(mean, 0, 1);
-    param_tab_layout->addWidget(lev, 0, 2);
-    param_tab_layout->addWidget(uev, 0, 3);
+    param_tab_layout->setAlignment(Qt::AlignCenter);
+
+    param_tab_layout->addWidget(label_lev, 0, 1, Qt::AlignCenter);
+    param_tab_layout->addWidget(label_mean, 0, 2, Qt::AlignCenter);
+    param_tab_layout->addWidget(label_uev, 0, 3, Qt::AlignCenter);
 
     param_tab_layout->addWidget(label_tau_inc, 1,0);
-    param_tab_layout->addWidget(inc_mean, 1,1);
-    param_tab_layout->addWidget(inc_lev, 1,2);
-    param_tab_layout->addWidget(inc_uev, 1,3);
+    param_tab_layout->addWidget(inc_lev, 1,1, Qt::AlignCenter);
+    param_tab_layout->addWidget(inc_mean, 1,2, Qt::AlignCenter);
+    param_tab_layout->addWidget(inc_uev, 1,3, Qt::AlignCenter);
 
     param_tab_layout->addWidget(label_percentage_predetect, 2,0);
-    param_tab_layout->addWidget(percentage_predetection, 2,1);
+    param_tab_layout->addWidget(percentage_predetection, 2,2, Qt::AlignCenter);
 
     param_tab_layout->addWidget(label_tau_symp, 3,0);
-    param_tab_layout->addWidget(symp_mean, 3,1);
-    param_tab_layout->addWidget(symp_lev, 3,2);
-    param_tab_layout->addWidget(symp_uev, 3,3);
+    param_tab_layout->addWidget(symp_lev, 3,1, Qt::AlignCenter);
+    param_tab_layout->addWidget(symp_mean, 3,2, Qt::AlignCenter);
+    param_tab_layout->addWidget(symp_uev, 3,3, Qt::AlignCenter);
 
     param_tab_layout->addWidget(label_asymp, 4, 0);
-    param_tab_layout->addWidget(percentage_asymptomatic, 4, 1);
+    param_tab_layout->addWidget(percentage_asymptomatic, 4, 2, Qt::AlignCenter);
 
     param_tab_layout->addWidget(label_tau_post, 5,0);
-    param_tab_layout->addWidget(post_mean, 5,1);
-    param_tab_layout->addWidget(post_lev, 5,2);
-    param_tab_layout->addWidget(post_uev, 5,3);
+    param_tab_layout->addWidget(post_lev, 5,1, Qt::AlignCenter);
+    param_tab_layout->addWidget(post_mean, 5,2, Qt::AlignCenter);
+    param_tab_layout->addWidget(post_uev, 5,3, Qt::AlignCenter);
 
     param_tab_layout->addWidget(label_pcr_sens, 7, 0);
-    param_tab_layout->addWidget(pcr_sens, 7, 1);
+    param_tab_layout->addWidget(pcr_sens, 7, 2, Qt::AlignCenter);
 
     param_tab_layout->addWidget(label_pcr_spec, 8, 0);
-    param_tab_layout->addWidget(pcr_spec, 8, 1);
+    param_tab_layout->addWidget(pcr_spec, 8, 2, Qt::AlignCenter);
 
+    param_tab_layout->setHorizontalSpacing(20);
     param_tab_layout->setSizeConstraint(QLayout::SetFixedSize);
 
     QWidget *widget = new QWidget;
