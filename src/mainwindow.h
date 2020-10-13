@@ -32,6 +32,21 @@ protected:
     QDoubleSpinBox *time_passed;
     QDoubleSpinBox *quarantine;
 
+    // parameters
+    std::map<std::string, float> default_values{{ "inc_lev", 5.8 },
+                                                { "inc_mean", 6.77 },
+                                                { "inc_uev", 7.75 },
+                                                { "percentage_predetection", 42 },
+                                                { "symp_lev", 5.5 },
+                                                { "symp_mean", 7.8 },
+                                                { "symp_uev", 10 },
+                                                { "percentage_asymptomatic", 20 },
+                                                { "post_lev", 2 },
+                                                { "post_mean", 5 },
+                                                { "post_uev", 7 },
+                                                { "pcr_sens", 80 },
+                                                { "pcr_spec", 99.5 }};
+
     QDoubleSpinBox *inc_mean;
     QDoubleSpinBox *inc_lev;
     QDoubleSpinBox *inc_uev;
@@ -56,6 +71,7 @@ protected:
     QLabel *label_result_factor;
     QLabel *result_factor;
 
+    // layout
     QTabWidget *tab;
     QWidget *chart;
     QWidget *log;
@@ -67,15 +83,20 @@ protected:
 private:
     QGroupBox *test_days_box;
     QPushButton *run_PushButton;
+    QPushButton *reset_PushButton;
 
     QDoubleSpinBox* create_parameter_DoubleSpinBox(QWidget *parent, double min, double max, int dec, double val);
+
     QWidget *initialize_tab_parameters();
+
     QWidget *initialize_tab_input();
+
     void initialize_test_date_checkboxes();
     void update_test_date_checkboxes();
 
 public slots:
     void run_PushButton_clicked();
+    void reset_PushButton_clicked();
     void time_passed_valueChanged();
     void quarantine_valueChanged();
 };

@@ -22,13 +22,6 @@
 std::vector<int> Simulation::sub_compartments = {1,1,11,1,1};
 int Simulation::nr_compartments = 15;
 
-// constructor for debugging purposes
-Simulation::Simulation() : QObject()
-{
-    initial_states.setZero(nr_compartments);
-    initial_states(0) = 1.0;
-}
-
 Simulation::Simulation(MainWindow *parent) : QObject(parent)
 {
     initial_states.setZero(nr_compartments);

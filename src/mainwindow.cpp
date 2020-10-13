@@ -64,8 +64,8 @@ QWidget *MainWindow::initialize_tab_input()
     QLabel *label_quarantine = new QLabel(tr("Duration of quarantine [days]:"));
     label_quarantine->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
-    time_passed = create_parameter_DoubleSpinBox(this, 0, 21, 0, 3);
-    quarantine = create_parameter_DoubleSpinBox(this, 0, 35, 0, 10);
+    this->time_passed = create_parameter_DoubleSpinBox(this, 0, 21, 0, 3);
+    this->quarantine = create_parameter_DoubleSpinBox(this, 0, 35, 0, 10);
 
     test_days_box = new QGroupBox(this);
     test_days_box->setTitle(tr("Days to test on:"));
@@ -126,24 +126,31 @@ QWidget* MainWindow::initialize_tab_parameters()
     QLabel *label_lev = new QLabel(tr("Lower extreme value"));
     QLabel *label_uev = new QLabel(tr("Upper extreme value"));
 
-    inc_mean = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 5.8);
-    inc_lev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 5);
-    inc_uev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 6);
+    this->inc_lev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["inc_lev"]);
+    this->inc_mean = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["inc_mean"]);
+    this->inc_uev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["inc_uev"]);
 
-    percentage_predetection = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 40);
+    this->percentage_predetection = create_parameter_DoubleSpinBox(this, 0.01, 100, 2,
+                                                                   this->default_values["percentage_predetection"]);
 
-    symp_mean = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 8.14);
-    symp_lev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 7);
-    symp_uev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 9);
+    this->symp_lev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["symp_lev"]);
+    this->symp_mean = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["symp_mean"]);
+    this->symp_uev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["symp_uev"]);
 
-    percentage_asymptomatic = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 20);
+    this->percentage_asymptomatic = create_parameter_DoubleSpinBox(this, 0.01, 100, 2,
+                                                                   this->default_values["percentage_asymptomatic"]);
 
-    post_mean = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 5);
-    post_lev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 4.5);
-    post_uev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 5.6);
+    this->post_lev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["post_lev"]);
+    this->post_mean = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["post_mean"]);
+    this->post_uev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["post_uev"]);
 
-    pcr_sens = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 70);
-    pcr_spec = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, 99.5);
+    this->pcr_sens = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["pcr_sens"]);
+    this->pcr_spec = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["pcr_spec"]);
+
+    reset_PushButton = new QPushButton(this);
+    reset_PushButton->setText(tr("Reset defaults"));
+    reset_PushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    connect(reset_PushButton, SIGNAL(clicked()), this, SLOT(reset_PushButton_clicked()) );
 
     // layout
     QGridLayout *param_tab_layout = new QGridLayout;
@@ -180,6 +187,8 @@ QWidget* MainWindow::initialize_tab_parameters()
     param_tab_layout->addWidget(label_pcr_spec, 8, 0);
     param_tab_layout->addWidget(pcr_spec, 8, 2, Qt::AlignCenter);
 
+    param_tab_layout->addWidget(reset_PushButton, 9, 3);
+
     param_tab_layout->setHorizontalSpacing(20);
     param_tab_layout->setSizeConstraint(QLayout::SetFixedSize);
 
@@ -192,13 +201,13 @@ void MainWindow::initialize_test_date_checkboxes()
 {
     // calc number of boxes needed
     int passed_days{0};
-    passed_days = std::ceil(time_passed->value());
-    int max_n_test = quarantine->value() +passed_days +1;
+    passed_days = std::ceil(this->time_passed->value());
+    int max_n_test = this->quarantine->value() + passed_days +1;
 
     // create boxes
-    test_date_checkboxes.clear();
+    this->test_date_checkboxes.clear();
     QHBoxLayout *layout = new QHBoxLayout;
-    for(int i=-passed_days; i < max_n_test-passed_days; ++i)
+    for(int i=-passed_days; i < max_n_test - passed_days; ++i)
     {
         QCheckBox *box = new QCheckBox();
         if (i < 0 )
@@ -207,9 +216,9 @@ void MainWindow::initialize_test_date_checkboxes()
         }
         else
         {
-            test_date_checkboxes.push_back(box);
-            if (i < int(test_date_checkboxes_states.size())){
-                box->setChecked(test_date_checkboxes_states.at(i));
+            this->test_date_checkboxes.push_back(box);
+            if (i < int(this->test_date_checkboxes_states.size())){
+                box->setChecked(this->test_date_checkboxes_states.at(i));
             }
         }
 
@@ -221,20 +230,20 @@ void MainWindow::initialize_test_date_checkboxes()
 
         layout->addItem(vbox);
     }
-    test_days_box->setLayout(layout);
-    test_date_checkboxes_states.clear();
+    this->test_days_box->setLayout(layout);
+    this->test_date_checkboxes_states.clear();
 }
 
 void MainWindow::update_test_date_checkboxes()
 {
     //save states
-    for (auto box : test_date_checkboxes)
+    for (auto box : this->test_date_checkboxes)
     {
         if ( box->isEnabled() )
-            test_date_checkboxes_states.push_back(box->isChecked());
+            this->test_date_checkboxes_states.push_back(box->isChecked());
     }
     //delete
-    QLayout *hb = test_days_box->layout();
+    QLayout *hb = this->test_days_box->layout();
     while(!hb->isEmpty())
     {
         QLayout *vb = hb->takeAt(0)->layout();
@@ -246,7 +255,7 @@ void MainWindow::update_test_date_checkboxes()
         delete vb;
     }
     delete hb;
-    test_days_box->update();
+    this->test_days_box->update();
 
     // re-initialize
     initialize_test_date_checkboxes();
@@ -256,6 +265,28 @@ void MainWindow::run_PushButton_clicked()
 {
     Simulation *simulation = new Simulation(this);
     simulation->run();
+}
+
+void MainWindow::reset_PushButton_clicked()
+{
+    this->inc_lev->setValue(this->default_values["inc_lev"]);
+    this->inc_mean->setValue(this->default_values["inc_mean"]);
+    this->inc_uev->setValue(this->default_values["inc_uev"]);
+
+    this->percentage_predetection->setValue(this->default_values["percentage_predetection"]);
+
+    this->symp_lev->setValue(this->default_values["symp_lev"]);
+    this->symp_mean->setValue(this->default_values["symp_mean"]);
+    this->symp_uev->setValue(this->default_values["symp_uev"]);
+
+    this->percentage_asymptomatic->setValue(this->default_values["percentage_asymptomatic"]);
+
+    this->post_lev->setValue(this->default_values["post_lev"]);
+    this->post_mean->setValue(this->default_values["post_mean"]);
+    this->post_uev->setValue(this->default_values["post_uev"]);
+
+    this->pcr_sens->setValue(this->default_values["pcr_sens"]);
+    this->pcr_spec->setValue(this->default_values["pcr_spec"]);
 }
 
 void MainWindow::time_passed_valueChanged()
