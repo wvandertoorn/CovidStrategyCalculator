@@ -36,7 +36,7 @@ protected:
     std::vector<float> residence_times_lev = {1., 1.5, 2.81, 2};
     std::vector<float> residence_times_uev = {5., 7.5, 10.81, 8};
     float pre_test_infect_prob{1.};
-    float percentage_asymt{.2};
+    float fraction_asymtomatic{.2};
     float pcr_sensitivity{.70};
     float pcr_specificity{.995};
 

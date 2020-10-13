@@ -10,7 +10,8 @@
 #include <QGroupBox>
 #include <QLabel>
 
-namespace Ui {
+namespace Ui
+{
 class MainWindow;
 }
 
@@ -25,8 +26,8 @@ public:
 
 protected:
     // input
-    std::vector<QCheckBox*> test_boxes{};
-    std::vector<bool> test_boxes_states{};
+    std::vector<QCheckBox*> test_date_checkboxes{};
+    std::vector<bool> test_date_checkboxes_states{};
 
     QDoubleSpinBox *time_passed;
     QDoubleSpinBox *quarantine;
@@ -35,13 +36,13 @@ protected:
     QDoubleSpinBox *inc_lev;
     QDoubleSpinBox *inc_uev;
 
-    QDoubleSpinBox *pred_mean;
+    QDoubleSpinBox *percentage_predetection;
 
     QDoubleSpinBox *symp_mean;
     QDoubleSpinBox *symp_lev;
     QDoubleSpinBox *symp_uev;
 
-    QDoubleSpinBox *asymp_mean;
+    QDoubleSpinBox *percentage_asymptomatic;
 
     QDoubleSpinBox *post_mean;
     QDoubleSpinBox *post_lev;
@@ -65,16 +66,16 @@ protected:
 
 private:
     QGroupBox *test_days_box;
-    QPushButton *pushButton_run;
+    QPushButton *run_PushButton;
 
-    QDoubleSpinBox* createParameterBox(QWidget *parent, double min, double max, int dec, double val);
-    QWidget *create_parameter_tab();
-    QWidget *create_input_tab();
-    void set_checkboxes();
-    void update_checkboxes();
+    QDoubleSpinBox* create_parameter_DoubleSpinBox(QWidget *parent, double min, double max, int dec, double val);
+    QWidget *initialize_tab_parameters();
+    QWidget *initialize_tab_input();
+    void initialize_test_date_checkboxes();
+    void update_test_date_checkboxes();
 
 public slots:
-    void pushButton_run_clicked();
+    void run_PushButton_clicked();
     void time_passed_valueChanged();
     void quarantine_valueChanged();
 };
