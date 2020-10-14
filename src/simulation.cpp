@@ -188,7 +188,6 @@ QtCharts::QChartView* Simulation::create_plot()
     int n_time = result_matrix_mean.rows();
     QtCharts::QChart *chart = new QtCharts::QChart();
 
-    // QtCharts::QCandlestickSeries *risk_error = new QtCharts::QCandlestickSeries();
     QtCharts::QBoxPlotSeries *risk_error = new QtCharts::QBoxPlotSeries();
     switch (this->mode) {
         case 0: risk_error->setName("Is- or will become infectious"); // mode exposure
@@ -206,7 +205,6 @@ QtCharts::QChartView* Simulation::create_plot()
         float uev = result_matrix_uev(j, Eigen::seq(0,1)).sum() + result_matrix_uev(j, 2);
 
         QtCharts::QBoxSet *set = new QtCharts::QBoxSet(lev,m,m,m,uev, QString::number(j-time_passed));
-        // QtCharts::QCandlestickSet *set = new QtCharts::QCandlestickSet(m,uev,lev,m, j-time_passed);
         risk_error->append(set);
     }
     chart->addSeries(risk_error);

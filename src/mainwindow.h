@@ -72,11 +72,6 @@ protected:
     QDoubleSpinBox *pcr_sens;
     QDoubleSpinBox *pcr_spec;
 
-    QLabel *label_result_perc;
-    QLabel *result_perc;
-    QLabel *label_result_factor;
-    QLabel *result_factor;
-
     // layout
     QTabWidget *tab;
     QWidget *chart;

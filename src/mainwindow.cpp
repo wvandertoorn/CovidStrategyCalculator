@@ -91,11 +91,6 @@ QWidget *MainWindow::initialize_tab_input()
     run_PushButton->setText(tr("Run"));
     run_PushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
-    label_result_perc = new QLabel(tr(""));
-    result_perc = new QLabel(tr(""));
-    label_result_factor = new QLabel(tr(""));
-    result_factor = new QLabel(tr(""));
-
     QGridLayout *gridLayout = new QGridLayout;
     gridLayout->addWidget(label_mode, 0, 0);
     gridLayout->addWidget(mode_ComboBox, 0, 1, Qt::AlignLeft);
