@@ -24,16 +24,22 @@ int Simulation::nr_compartments = 25;
 
 Simulation::Simulation(MainWindow *parent) : QObject(parent)
 {
-    initial_states.setZero(nr_compartments);
-    initial_states(0) = 1.0;
-
     this->m_parent = parent;
     collect_data(this->m_parent);
+
+    initial_states.setZero(nr_compartments);
+    switch (this->mode) {
+        case 0: initial_states(0) = 1.0; // mode exposure
+                break;
+        case 1: initial_states(6) = 1.0; // mode symptom onset
+    }
 }
 
 void Simulation::collect_data(MainWindow *parent)
 {
     // input
+    mode = parent->mode_ComboBox->currentIndex();
+    mode_str = parent->mode_ComboBox->currentText().toStdString();
     time_passed = parent->time_passed->value();
     pre_test_infect_prob = 1;
     quarantine = parent->quarantine->value();
@@ -184,7 +190,11 @@ QtCharts::QChartView* Simulation::create_plot()
 
     // QtCharts::QCandlestickSeries *risk_error = new QtCharts::QCandlestickSeries();
     QtCharts::QBoxPlotSeries *risk_error = new QtCharts::QBoxPlotSeries();
-    risk_error->setName("Is- or will become infectious");
+    switch (this->mode) {
+        case 0: risk_error->setName("Is- or will become infectious"); // mode exposure
+                break;
+        case 1: risk_error->setName("Infectious");                    // mode symptom onset
+    }
     QPen red_pen(Qt::red);
     QBrush red_brush(Qt::red);
     risk_error->setPen(red_pen);
@@ -288,9 +298,10 @@ void Simulation::create_result_log()
 {
     QLabel *label = new QLabel(tr("Result log"));
 
-    QTableWidget *table = new QTableWidget(1, 5);
+    QTableWidget *table = new QTableWidget(1, 6);
     table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    table->setHorizontalHeaderLabels((QStringList() << "time passed [day]"
+    table->setHorizontalHeaderLabels((QStringList() << "simulation start"
+                                                    << "time passed [day]"
                                                     << "quarantine [day]"
                                                     << "test [day]"
                                                     << "risk reduction [%]"
@@ -314,38 +325,54 @@ void Simulation::create_result_log()
 
 void Simulation::write_row_result_log(QTableWidget *table)
 {
-    table->setItem(0,0, new QTableWidgetItem(QString::number(time_passed)));
-    table->setItem(0,1, new QTableWidgetItem(QString::number(quarantine)));
+    table->setItem(0,0, new QTableWidgetItem(QString(this->mode_str.c_str())));
+    table->setItem(0,1, new QTableWidgetItem(QString::number(this->time_passed)));
+    table->setItem(0,2, new QTableWidgetItem(QString::number(this->quarantine)));
 
-    if (t_test.size())
+    if (this->t_test.size())
     {
         QString days{};
-        for (int day : t_test)
+        for (int day : this->t_test)
         {
-            days += (QString::number(day-time_passed) + ", ");
+            days += (QString::number(day - this->time_passed) + ", ");
         }
         days.chop(2);
-        table->setItem(0,2, new QTableWidgetItem(days));
+        table->setItem(0,3, new QTableWidgetItem(days));
     }
     else
     {
-        table->setItem(0,2, new QTableWidgetItem());
+        table->setItem(0,3, new QTableWidgetItem());
     }
 
-    table->setItem(0,3, new QTableWidgetItem(QString::number( (pre_test_infect_prob-calculate_strategy_result(result_matrix_mean)) / pre_test_infect_prob*100, 'f', 2)
+    table->setItem(0,4, new QTableWidgetItem(QString::number((pre_test_infect_prob
+                                                                - calculate_strategy_result(result_matrix_mean))
+                                                                / pre_test_infect_prob * 100,
+                                                             'f', 2)
                                              + "  ("
-                                             + QString::number( (pre_test_infect_prob-calculate_strategy_result(result_matrix_uev)) / pre_test_infect_prob*100, 'f', 2)
+                                             + QString::number((pre_test_infect_prob
+                                                                  - calculate_strategy_result(result_matrix_uev))
+                                                                  / pre_test_infect_prob * 100,
+                                                               'f', 2)
                                              + ", "
-                                             + QString::number( (pre_test_infect_prob-calculate_strategy_result(result_matrix_lev)) / pre_test_infect_prob*100, 'f', 2)
+                                             + QString::number((pre_test_infect_prob
+                                                                  - calculate_strategy_result(result_matrix_lev))
+                                                                  / pre_test_infect_prob * 100,
+                                                               'f', 2)
                                              + ")" ));
-    table->setItem(0,4, new QTableWidgetItem(QString::number(pre_test_infect_prob/calculate_strategy_result(result_matrix_mean), 'f', 2)
+    table->setItem(0,5, new QTableWidgetItem(QString::number(pre_test_infect_prob
+                                                               / calculate_strategy_result(result_matrix_mean),
+                                                             'f', 2)
                                              + "  ("
-                                             + QString::number(pre_test_infect_prob / calculate_strategy_result(result_matrix_uev), 'f', 2)
+                                             + QString::number(pre_test_infect_prob
+                                                                 / calculate_strategy_result(result_matrix_uev),
+                                                               'f', 2)
                                              + ", "
-                                             + QString::number(pre_test_infect_prob / calculate_strategy_result(result_matrix_lev), 'f', 2)
+                                             + QString::number(pre_test_infect_prob
+                                                                 / calculate_strategy_result(result_matrix_lev),
+                                                               'f', 2)
                                              + ")" ));
 
-    for (int i=0; i<5; ++i)
+    for (int i=0; i<6; ++i)
     {
         table->item(0,i)->setFlags(table->item(0,i)->flags() &  ~Qt::ItemIsEditable);
     }

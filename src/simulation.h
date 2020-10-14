@@ -29,6 +29,8 @@ protected:
     // input tab
     // bool time_passed_known{false};
     float pre_test_infect_prob{1.};
+    int mode;
+    std::string mode_str;
     int time_passed;
     int quarantine;
     std::vector<int> t_test{};

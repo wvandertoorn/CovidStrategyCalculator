@@ -5,6 +5,7 @@
 
 #include <QMainWindow>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QPushButton>
 #include <QGroupBox>
@@ -26,11 +27,16 @@ public:
 
 protected:
     // input
-    std::vector<QCheckBox*> test_date_checkboxes{};
-    std::vector<bool> test_date_checkboxes_states{};
+    std::map<int, std::string> mode_map_int{{ 0, "exposure"},
+                                            { 1, "symptom onset"}};
+    QComboBox *mode_ComboBox;
+    int mode{0};
 
     QDoubleSpinBox *time_passed;
     QDoubleSpinBox *quarantine;
+
+    std::vector<QCheckBox*> test_date_checkboxes{};
+    std::vector<bool> test_date_checkboxes_states{};
 
     // parameters
     std::map<std::string, float> default_values{{ "inc_lev", 5.8 },
@@ -99,6 +105,7 @@ public slots:
     void reset_PushButton_clicked();
     void time_passed_valueChanged();
     void quarantine_valueChanged();
+    void mode_ComboBox_currentIndexChanged(int);
 };
 
 #endif // MAINWINDOW_H

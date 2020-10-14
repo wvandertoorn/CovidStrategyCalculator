@@ -59,16 +59,27 @@ QDoubleSpinBox* MainWindow::create_parameter_DoubleSpinBox(QWidget *parent, doub
 
 QWidget *MainWindow::initialize_tab_input()
 {
-    QLabel *label_time_passed = new QLabel(tr("Time passed since infection [days]:"));
+    QLabel *label_mode = new QLabel(tr("Simulation start:"));
+    label_mode->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
+    this->mode_ComboBox = new QComboBox(this);
+    this->mode_ComboBox->addItems(QStringList{"exposure", "symptom onset"});
+    this->mode_ComboBox->setCurrentIndex(0);
+
+    QLabel *label_time_passed = new QLabel( ( std::string{"Time passed since "} +
+                                              this->mode_ComboBox->currentText().toStdString() +
+                                              std::string{" [days]:"}).c_str() );
     label_time_passed->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
+    this->time_passed = create_parameter_DoubleSpinBox(this, 0, 21, 0, 3);
+
     QLabel *label_quarantine = new QLabel(tr("Duration of quarantine [days]:"));
     label_quarantine->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
-    this->time_passed = create_parameter_DoubleSpinBox(this, 0, 21, 0, 3);
     this->quarantine = create_parameter_DoubleSpinBox(this, 0, 35, 0, 10);
 
-    test_days_box = new QGroupBox(this);
-    test_days_box->setTitle(tr("Days to test on:"));
+    this->test_days_box = new QGroupBox(this);
+    this->test_days_box->setTitle(tr("Days to test on:"));
     QScrollArea* scrollArea = new QScrollArea(this);
     scrollArea->setWidget(test_days_box);
     scrollArea->setWidgetResizable(true);
@@ -76,7 +87,7 @@ QWidget *MainWindow::initialize_tab_input()
     scrollArea->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff);
     scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
 
-    run_PushButton = new QPushButton(this);
+    this->run_PushButton = new QPushButton(this);
     run_PushButton->setText(tr("Run"));
     run_PushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
@@ -86,10 +97,12 @@ QWidget *MainWindow::initialize_tab_input()
     result_factor = new QLabel(tr(""));
 
     QGridLayout *gridLayout = new QGridLayout;
-    gridLayout->addWidget(label_time_passed, 0,0);
-    gridLayout->addWidget(time_passed, 0,1, Qt::AlignLeft);
-    gridLayout->addWidget(label_quarantine, 1,0);
-    gridLayout->addWidget(quarantine, 1,1, Qt::AlignLeft);
+    gridLayout->addWidget(label_mode, 0, 0);
+    gridLayout->addWidget(mode_ComboBox, 0, 1, Qt::AlignLeft);
+    gridLayout->addWidget(label_time_passed, 1, 0);
+    gridLayout->addWidget(time_passed, 1, 1, Qt::AlignLeft);
+    gridLayout->addWidget(label_quarantine, 2, 0);
+    gridLayout->addWidget(quarantine, 2, 1, Qt::AlignLeft);
     gridLayout->setHorizontalSpacing(10);
     gridLayout->setSizeConstraint(QLayout::SetFixedSize);
 
@@ -99,9 +112,11 @@ QWidget *MainWindow::initialize_tab_input()
     input_tab_layout->addWidget(run_PushButton);
     input_tab_layout->setAlignment(Qt::AlignTop);
 
-    connect(run_PushButton, SIGNAL(clicked()), this, SLOT(run_PushButton_clicked()) );
+    connect(mode_ComboBox, SIGNAL(currentIndexChanged(int)),
+            this, SLOT(mode_ComboBox_currentIndexChanged(int)) );
     connect(time_passed, SIGNAL(valueChanged(double)), this, SLOT(time_passed_valueChanged()));
     connect(quarantine, SIGNAL(valueChanged(double)), this, SLOT(quarantine_valueChanged()));
+    connect(run_PushButton, SIGNAL(clicked()), this, SLOT(run_PushButton_clicked()) );
 
     initialize_test_date_checkboxes();
 
@@ -297,4 +312,16 @@ void MainWindow::time_passed_valueChanged()
 void MainWindow::quarantine_valueChanged()
 {
     update_test_date_checkboxes();
+}
+
+void MainWindow::mode_ComboBox_currentIndexChanged(int)
+{
+    QLayout *input_tab_layout = this->tab->widget(0)->layout()->itemAt(0)->layout();
+    QGridLayout *gridLayout = qobject_cast<QGridLayout*>(input_tab_layout);
+    QWidget *widget = gridLayout->itemAtPosition(1,0)->widget();
+    QLabel* label_time_passed = qobject_cast<QLabel*>(widget);
+
+    label_time_passed->setText((std::string{"Time passed since "} +
+                                this->mode_ComboBox->currentText().toStdString() +
+                                std::string{" [days]:"}).c_str() );
 }
