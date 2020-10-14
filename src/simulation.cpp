@@ -301,9 +301,9 @@ void Simulation::create_result_log()
     QTableWidget *table = new QTableWidget(1, 6);
     table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     table->setHorizontalHeaderLabels((QStringList() << "simulation start"
-                                                    << "time passed [day]"
-                                                    << "quarantine [day]"
-                                                    << "test [day]"
+                                                    << "time passed [days]"
+                                                    << "quarantine [days]"
+                                                    << "test [days]"
                                                     << "risk reduction [%]"
                                                     << "risk reduction [factor]"));
 
