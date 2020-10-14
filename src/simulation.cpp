@@ -1,23 +1,18 @@
 #include "simulation.h"
 #include "mainwindow.h"
 
-#include <Eigen/Dense>
 #include <unsupported/Eigen/MatrixFunctions>
 
 #include <QVBoxLayout>
 #include <QHeaderView>
 
-#include <QtCharts/QChartView>
+#include <QtCharts/QBoxPlotSeries>
+#include <QtCharts/QBoxSet>
 #include <QtCharts/QChart>
-#include <QtCharts/QCandlestickSeries>
-#include <QtCharts/QCandlestickSet>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QLegendMarker>
 #include <QtCharts/QValueAxis>
 #include <QtCharts/QBarCategoryAxis>
-
-#include <QtCharts/QBoxPlotSeries>
-#include <QtCharts/QBoxSet>
 
 std::vector<int> Simulation::sub_compartments = {5,1,17,1,1};
 int Simulation::nr_compartments = 25;

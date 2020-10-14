@@ -1,8 +1,6 @@
 #include "mainwindow.h"
 
 #include <QGridLayout>
-#include <QGroupBox>
-#include <QPushButton>
 #include <QDesktopWidget>
 
 MainWindow::MainWindow(QWidget *parent) :

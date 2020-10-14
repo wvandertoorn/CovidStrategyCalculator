@@ -3,13 +3,13 @@
 
 #include "simulation.h"
 
-#include <QMainWindow>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
-#include <QPushButton>
 #include <QGroupBox>
 #include <QLabel>
+#include <QPushButton>
+#include <QMainWindow>
 
 namespace Ui
 {
