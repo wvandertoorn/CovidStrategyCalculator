@@ -130,13 +130,13 @@ Eigen::MatrixXf Simulation::calc_A(Eigen::MatrixXf S,
     return S.cwiseProduct(temp);
 }
 
-Eigen::MatrixXf  Simulation::calc_X(float delay,
-                                    float qrntn,
+Eigen::MatrixXf  Simulation::calc_X(int delay,
+                                    int qrntn,
                                     Eigen::MatrixXf A,
                                     Eigen::VectorXf states
                                     )
 {
-    int t_end = std::ceil(delay) + std::floor(qrntn) + 1;
+    int t_end = delay + qrntn + 1;
 
     Eigen::VectorXf time(t_end);
     for (int i=0; i< t_end; ++i)

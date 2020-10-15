@@ -59,8 +59,8 @@ protected:
     Eigen::MatrixXf calc_S(int n);
     Eigen::MatrixXf calc_A(Eigen::MatrixXf S_,
                            Eigen::VectorXf r);
-    Eigen::MatrixXf calc_X(float delay,
-                           float qrntn,
+    Eigen::MatrixXf calc_X(int delay,
+                           int qrntn,
                            Eigen::MatrixXf A_,
                            Eigen::VectorXf states);
     Eigen::MatrixXf assemble_phases(Eigen::MatrixXf X_,
