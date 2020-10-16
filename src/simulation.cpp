@@ -291,14 +291,15 @@ void Simulation::create_result_log()
 {
     QLabel *label = new QLabel(tr("Result log"));
 
-    QTableWidget *table = new QTableWidget(1, 6);
+    QTableWidget *table = new QTableWidget(1, 7);
     table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     table->setHorizontalHeaderLabels((QStringList() << "simulation start"
                                                     << "time passed [days]"
                                                     << "quarantine [days]"
                                                     << "test [days]"
-                                                    << "risk reduction [%]"
-                                                    << "risk reduction [factor]"));
+                                                    << "pre-procedure risk [%]"
+                                                    << "residual risk [%]"
+                                                    << "fold risk reduction"));
 
     write_row_result_log(table);
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
@@ -337,22 +338,18 @@ void Simulation::write_row_result_log(QTableWidget *table)
         table->setItem(0,3, new QTableWidgetItem());
     }
 
-    table->setItem(0,4, new QTableWidgetItem(QString::number((pre_test_infect_prob
-                                                                - calculate_strategy_result(result_matrix_mean))
-                                                                / pre_test_infect_prob * 100,
+    table->setItem(0,4, new QTableWidgetItem(QString::number(pre_test_infect_prob *100, 'f', 2)));
+
+    table->setItem(0,5, new QTableWidgetItem(QString::number(calculate_strategy_result(result_matrix_mean)* 100,
                                                              'f', 2)
                                              + "  ("
-                                             + QString::number((pre_test_infect_prob
-                                                                  - calculate_strategy_result(result_matrix_uev))
-                                                                  / pre_test_infect_prob * 100,
+                                             + QString::number(calculate_strategy_result(result_matrix_uev)* 100,
                                                                'f', 2)
                                              + ", "
-                                             + QString::number((pre_test_infect_prob
-                                                                  - calculate_strategy_result(result_matrix_lev))
-                                                                  / pre_test_infect_prob * 100,
+                                             + QString::number(calculate_strategy_result(result_matrix_lev)* 100,
                                                                'f', 2)
                                              + ")" ));
-    table->setItem(0,5, new QTableWidgetItem(QString::number(pre_test_infect_prob
+    table->setItem(0,6, new QTableWidgetItem(QString::number(pre_test_infect_prob
                                                                / calculate_strategy_result(result_matrix_mean),
                                                              'f', 2)
                                              + "  ("
@@ -365,7 +362,7 @@ void Simulation::write_row_result_log(QTableWidget *table)
                                                                'f', 2)
                                              + ")" ));
 
-    for (int i=0; i<6; ++i)
+    for (int i=0; i<7; ++i)
     {
         table->item(0,i)->setFlags(table->item(0,i)->flags() &  ~Qt::ItemIsEditable);
     }
