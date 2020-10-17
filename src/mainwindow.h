@@ -39,19 +39,27 @@ protected:
     std::vector<bool> test_date_checkboxes_states{};
 
     // parameters
-    std::map<std::string, float> default_values{{ "inc_lev", 5.8 },
+    std::map<std::string, float> default_values{{ "time_passed", 3},
+                                                { "quarantine", 10},
+                                                { "inc_lev", 5.7 },
                                                 { "inc_mean", 6.77 },
-                                                { "inc_uev", 7.75 },
+                                                { "inc_uev", 7.8 },
                                                 { "percentage_predetection", 42 },
                                                 { "symp_lev", 5.5 },
                                                 { "symp_mean", 7.8 },
-                                                { "symp_uev", 10 },
+                                                { "symp_uev", 10.8 },
                                                 { "percentage_asymptomatic", 20 },
-                                                { "post_lev", 2 },
+                                                { "post_lev", 2.1 },
                                                 { "post_mean", 5 },
-                                                { "post_uev", 7 },
+                                                { "post_uev", 6.7 },
                                                 { "pcr_sens", 80 },
-                                                { "pcr_spec", 99.5 }};
+                                                { "pcr_spec", 99.5 },
+                                                { "week4", 50. },
+                                                { "week3", 50. },
+                                                { "week2", 50. },
+                                                { "week1", 50. },
+                                                { "week0", 50. },
+                                                { "percent_undetected", 95.}};
 
     QDoubleSpinBox *inc_mean;
     QDoubleSpinBox *inc_lev;
