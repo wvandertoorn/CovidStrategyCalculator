@@ -27,7 +27,75 @@ Simulation::Simulation(MainWindow *parent) : QObject(parent)
         case 0: initial_states(0) = 1.0; // mode exposure
                 break;
         case 1: initial_states(6) = 1.0; // mode symptom onset
+        case 2: break;
     }
+}
+
+Simulation::Simulation(MainWindow *parent, Eigen::MatrixXf init_states, float prerisk) : QObject(parent)
+{
+    this->m_parent = parent;
+    collect_data(this->m_parent);
+
+    Eigen::MatrixXf tmp;
+    tmp.setZero(nr_compartments, 1);
+    init_states.resize(nr_compartments-1, 1);
+    tmp(Eigen::seq(0, Eigen::last-1), 0) = init_states;
+    this->initial_states = tmp;
+
+    // Eigen::Map<Eigen::VectorXf> tmp(init_states.data(), init_states.size());
+    // tmp = tmp << 0; //append one state for sink node
+    // this->initial_states = tmp;
+    this->pre_test_infect_prob = prerisk;
+}
+
+std::tuple<std::vector<Eigen::MatrixXf>,
+           std::vector<Eigen::MatrixXf>> Simulation::run_prevalence(std::vector<float> week_incidences)
+{
+    time_passed = 0;
+    Eigen::MatrixXf states_today_mean, states_today_lev, states_today_uev,
+                    probs_today_mean, probs_today_lev, probs_today_uev;
+
+    states_today_mean.setZero(1, nr_compartments-1);
+    states_today_lev.setZero(1, nr_compartments-1);
+    states_today_uev.setZero(1, nr_compartments-1);
+
+    float total_residence_mean = std::accumulate(residence_times_mean.begin(), residence_times_mean.end(), 0);
+    // float tot_lev = std::accumulate(residence_times_lev.begin(), residence_times_lev.end(), 0);
+    // float tot_uev = std::accumulate(residence_times_uev.begin(), residence_times_uev.end(), 0);
+
+    for (int week = 0; week < 5; ++week)
+    {
+        float day_incidence = week_incidences[week] / 7;
+        this->quarantine = (week + 1) * 7 - 1;
+
+        // set intial states according to incidence report
+        int counter = 0;
+        for (int i = 0; i < 4; ++i)
+        {
+            for (int j=0; j < sub_compartments[i]; ++j)
+            {
+                    initial_states(counter) = residence_times_mean[i] / total_residence_mean * day_incidence / sub_compartments[i] ;
+                    counter++;
+            }
+        }
+
+        this->run();
+        states_today_mean.array() += X_mean(Eigen::seq(Eigen::last-6, Eigen::last), Eigen::all).colwise().sum().array();
+        states_today_lev.array() += X_lev(Eigen::seq(Eigen::last-6, Eigen::last), Eigen::all).colwise().sum().array();
+        states_today_uev.array() += X_uev(Eigen::seq(Eigen::last-6, Eigen::last), Eigen::all).colwise().sum().array();
+
+        initial_states.array() = 0.0; //needed to set initial state of sink compartment back to zero
+
+    }
+
+    probs_today_mean = assemble_phases(states_today_mean, sub_compartments);
+    probs_today_lev = assemble_phases(states_today_lev, sub_compartments);
+    probs_today_uev = assemble_phases(states_today_uev, sub_compartments);
+
+    std::vector<Eigen::MatrixXf> states{states_today_mean, states_today_lev, states_today_uev};
+    std::vector<Eigen::MatrixXf> probs{probs_today_mean, probs_today_lev, probs_today_uev};
+
+    return std::make_tuple(states, probs);
 }
 
 void Simulation::collect_data(MainWindow *parent)
@@ -36,7 +104,7 @@ void Simulation::collect_data(MainWindow *parent)
     mode = parent->mode_ComboBox->currentIndex();
     mode_str = parent->mode_ComboBox->currentText().toStdString();
     time_passed = parent->time_passed->value();
-    pre_test_infect_prob = 1;
+    // pre_test_infect_prob = 1;
     quarantine = parent->quarantine->value();
 
     // parameters
@@ -184,20 +252,22 @@ QtCharts::QChartView* Simulation::create_plot()
     QtCharts::QChart *chart = new QtCharts::QChart();
 
     QtCharts::QBoxPlotSeries *risk_error = new QtCharts::QBoxPlotSeries();
-    switch (this->mode) {
-        case 0: risk_error->setName("Is- or will become infectious"); // mode exposure
-                break;
-        case 1: risk_error->setName("Infectious");                    // mode symptom onset
-    }
+    risk_error->setName("Infected and in incubation or symptomatic period");
+
     QPen red_pen(Qt::red);
     QBrush red_brush(Qt::red);
     risk_error->setPen(red_pen);
     risk_error->setBrush(red_brush);
+
+    float max_value_risk{0.}, max_value_detect{0.};
+
     for (int j=0; j<n_time; ++j)
     {
-        float m = result_matrix_mean(j, Eigen::seq(0,1)).sum() + result_matrix_mean(j, 2);
-        float lev = result_matrix_lev(j, Eigen::seq(0,1)).sum() + result_matrix_lev(j, 2);
-        float uev = result_matrix_uev(j, Eigen::seq(0,1)).sum() + result_matrix_uev(j, 2);
+        float m = result_matrix_mean(j, Eigen::seq(0,2)).sum();
+        float lev = result_matrix_lev(j, Eigen::seq(0,2)).sum();
+        float uev = result_matrix_uev(j, Eigen::seq(0,2)).sum();
+
+        if (uev > max_value_risk){ max_value_risk = uev; }
 
         QtCharts::QBoxSet *set = new QtCharts::QBoxSet(lev,m,m,m,uev, QString::number(j-time_passed));
         risk_error->append(set);
@@ -206,16 +276,19 @@ QtCharts::QChartView* Simulation::create_plot()
 
     // QtCharts::QCandlestickSeries *detectable_error = new QtCharts::QCandlestickSeries();
     QtCharts::QBoxPlotSeries *detectable_error = new QtCharts::QBoxPlotSeries();
-    detectable_error->setName("Detectable");
+    detectable_error->setName("Infected and detectable");
     QPen black_pen(Qt::black);
     QBrush black_brush(Qt::black);
     detectable_error->setPen(black_pen);
     detectable_error->setBrush(black_brush);
+
     for (int j=0; j<n_time; ++j)
     {
-        float m = (result_matrix_mean(j, 1) + result_matrix_mean(j, 2)) *pcr_sensitivity;
-        float lev = (result_matrix_lev(j, 1) + result_matrix_lev(j, 2)) *pcr_sensitivity;
-        float uev = (result_matrix_uev(j, 1) + result_matrix_uev(j, 2)) *pcr_sensitivity;
+        float m = result_matrix_mean(j, 0) * (1-pcr_specificity) + result_matrix_mean(j, Eigen::seq(1,3)).sum() *pcr_sensitivity;
+        float lev = result_matrix_lev(j, 0) * (1-pcr_specificity) + result_matrix_lev(j, Eigen::seq(1,3)).sum() *pcr_sensitivity;
+        float uev = result_matrix_uev(j, 0) * (1-pcr_specificity) + result_matrix_uev(j, Eigen::seq(1,3)).sum() *pcr_sensitivity;
+
+        if (uev > max_value_detect){ max_value_detect = uev; }
 
         // QtCharts::QCandlestickSet *set = new QtCharts::QCandlestickSet(m,uev,lev,m, j-time_passed);
         QtCharts::QBoxSet *set = new QtCharts::QBoxSet(lev,m,m,m,uev, QString::number(j-time_passed));
@@ -230,14 +303,25 @@ QtCharts::QChartView* Simulation::create_plot()
     axisX_cat->setCategories(categories);
     chart->addAxis(axisX_cat, Qt::AlignBottom);
     axisX_cat->setTitleText("Day");
-    risk_error->attachAxis(axisX_cat);
-    detectable_error->attachAxis(axisX_cat);
+    if (max_value_risk >= max_value_detect){
+        risk_error->attachAxis(axisX_cat);
+        detectable_error->attachAxis(axisX_cat);
+    }
+    else {
+        detectable_error->attachAxis(axisX_cat);
+        risk_error->attachAxis(axisX_cat);
+    }
 
     QtCharts::QValueAxis *axisY = new QtCharts::QValueAxis();
     chart->addAxis(axisY, Qt::AlignLeft);
-    risk_error->attachAxis(axisY);
-    detectable_error->attachAxis(axisY);
-    axisY->setRange(0, 1);
+    if (max_value_risk >= max_value_detect){
+        risk_error->attachAxis(axisY);
+        detectable_error->attachAxis(axisY);
+    }
+    else {
+        detectable_error->attachAxis(axisY);
+        risk_error->attachAxis(axisY);
+    }
     axisY->setTitleText("Probability");
 
     chart->legend()->show();
@@ -263,19 +347,20 @@ QTableWidget* Simulation::create_table()
 
     QTableWidget *table = new QTableWidget(1, n_time);
     table->setHorizontalHeaderLabels(h_labels);
-    table->setVerticalHeaderLabels((QStringList() << "Detectable"));
+    table->setVerticalHeaderLabels((QStringList() << "Test efficacy"));
+
+    float start_mean = result_matrix_mean(0, Eigen::all).sum();
+    float start_lev = result_matrix_lev(0, Eigen::all).sum();
+    float start_uev = result_matrix_uev(0, Eigen::all).sum();
 
     for (int i = 0; i< n_time; ++i)
     {
-        float perc_mean = (1-pcr_specificity) * result_matrix_mean(i, 0) +
-                          (result_matrix_mean(i, 1) + result_matrix_mean(i, 2))
-                          * pcr_sensitivity * 100;
-        float perc_lev = (1-pcr_specificity) * result_matrix_lev(i, 0) +
-                          (result_matrix_lev(i, 1) +  result_matrix_lev(i, 2))
-                          * pcr_sensitivity * 100;
-        float perc_uev = (1-pcr_specificity) * result_matrix_uev(i, 0) +
-                          (result_matrix_uev(i, 1) + result_matrix_uev(i, 2))
-                          * pcr_sensitivity * 100;
+        float perc_mean = ((1-pcr_specificity) * result_matrix_mean(i, 0) +
+                          (result_matrix_mean(i, Eigen::seq(1, 3)).sum() * pcr_sensitivity)) / start_mean * 100;
+        float perc_lev = ((1-pcr_specificity) * result_matrix_lev(i, 0) +
+                          (result_matrix_lev(i,  Eigen::seq(1, 3)).sum() * pcr_sensitivity)) / start_lev * 100;
+        float perc_uev = ((1-pcr_specificity) * result_matrix_uev(i, 0) +
+                          (result_matrix_uev(i, Eigen::seq(1, 3)).sum() * pcr_sensitivity)) / start_uev * 100;
         table->setItem(0, i, new QTableWidgetItem(QString::number(perc_mean, 'f', 2) + "%"
                                                   + "  (" + QString::number(perc_uev, 'f', 2)
                                                   + ", " + QString::number(perc_lev, 'f', 2) + ")"));
@@ -442,25 +527,22 @@ void Simulation::run()
     Eigen::VectorXf rates;
     Eigen::MatrixXf S;
     Eigen::MatrixXf A;
-    Eigen::MatrixXf X;
 
     rates = calc_rates(residence_times_mean, sub_compartments);
     S = calc_S(nr_compartments);
     A = calc_A(S, rates);
-    X = calc_X(time_passed, quarantine, A, initial_states);
-    this->result_matrix_mean = assemble_phases(X, sub_compartments);
+    this->X_mean = calc_X(time_passed, quarantine, A, initial_states);
+    this->result_matrix_mean = assemble_phases(X_mean, sub_compartments);
 
     rates = calc_rates(residence_times_lev, sub_compartments);
     S = calc_S(nr_compartments);
     A = calc_A(S, rates);
-    X = calc_X(time_passed, quarantine, A, initial_states);
-    this->result_matrix_lev = assemble_phases(X, sub_compartments);
+    this->X_lev = calc_X(time_passed, quarantine, A, initial_states);
+    this->result_matrix_lev = assemble_phases(X_lev, sub_compartments);
 
     rates = calc_rates(residence_times_uev, sub_compartments);
     S = calc_S(nr_compartments);
     A = calc_A(S, rates);
-    X = calc_X(time_passed, quarantine, A, initial_states);
-    this->result_matrix_uev = assemble_phases(X, sub_compartments);
-
-    output_results();
+    this->X_uev = calc_X(time_passed, quarantine, A, initial_states);
+    this->result_matrix_uev = assemble_phases(X_uev, sub_compartments);
 }

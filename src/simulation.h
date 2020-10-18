@@ -18,7 +18,11 @@ class Simulation : public QObject
     Q_OBJECT
 public:
     explicit Simulation(MainWindow *parent);
+    explicit Simulation(MainWindow *parent, Eigen::MatrixXf init_states, float prerisk);
     void run();
+    std::tuple<std::vector<Eigen::MatrixXf>,
+               std::vector<Eigen::MatrixXf>> run_prevalence(std::vector<float> week_incidences);
+    void output_results();
 
 protected:
     // model structure
@@ -27,7 +31,6 @@ protected:
     static int nr_compartments;
 
     // input tab
-    // bool time_passed_known{false};
     float pre_test_infect_prob{1.};
     int mode;
     std::string mode_str;
@@ -46,6 +49,9 @@ protected:
 
     // simulation
     Eigen::VectorXf initial_states;
+    Eigen::MatrixXf X_mean;
+    Eigen::MatrixXf X_lev;
+    Eigen::MatrixXf X_uev;
     Eigen::MatrixXf result_matrix_mean;
     Eigen::MatrixXf result_matrix_lev;
     Eigen::MatrixXf result_matrix_uev;
@@ -74,8 +80,6 @@ protected:
     void update_result_log();
 
     float calculate_strategy_result(Eigen::MatrixXf matrix);
-    void output_results();
-
 signals:
 
 public slots:

@@ -3,6 +3,8 @@
 
 #include "simulation.h"
 
+#include <Eigen/Dense>
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
@@ -10,6 +12,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QMainWindow>
+#include <QScrollArea>
 
 namespace Ui
 {
@@ -28,7 +31,8 @@ public:
 protected:
     // input
     std::map<int, std::string> mode_map_int{{ 0, "exposure"},
-                                            { 1, "symptom onset"}};
+                                            { 1, "symptom onset"},
+                                            { 2, "exposure"}};
     QComboBox *mode_ComboBox;
     int mode{0};
 
@@ -59,7 +63,12 @@ protected:
                                                 { "week2", 50. },
                                                 { "week1", 50. },
                                                 { "week0", 50. },
-                                                { "percent_undetected", 95.}};
+                                                { "percent_detected", 80.}};
+
+    std::tuple<std::vector<Eigen::MatrixXf>, std::vector<Eigen::MatrixXf>> result_prevalence_estimation;
+    Eigen::MatrixXf initial_states;
+    float pre_procedure_risk;
+    bool use_prevalence_estimation{false};
 
     QDoubleSpinBox *inc_mean;
     QDoubleSpinBox *inc_lev;
@@ -85,6 +94,8 @@ protected:
     QWidget *chart;
     QWidget *log;
 
+    QScrollArea* scroll_tab;
+
     Ui::MainWindow *ui;
 
     friend class Simulation;
@@ -95,10 +106,11 @@ private:
     QPushButton *reset_PushButton;
 
     QDoubleSpinBox* create_parameter_DoubleSpinBox(QWidget *parent, double min, double max, int dec, double val);
-
-    QWidget *initialize_tab_parameters();
+    QSpinBox* create_parameter_SpinBox(QWidget *parent, int min, int max, int val);
 
     QWidget *initialize_tab_input();
+    QWidget *initialize_tab_parameters();
+    QWidget *initialize_tab_prevalence();
 
     void initialize_test_date_checkboxes();
     void update_test_date_checkboxes();

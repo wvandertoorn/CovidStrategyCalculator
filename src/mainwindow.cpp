@@ -1,7 +1,10 @@
 #include "mainwindow.h"
 
-#include <QGridLayout>
 #include <QDesktopWidget>
+#include <QGridLayout>
+#include <QFormLayout>
+#include <QScrollBar>
+#include <QSpinBox>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
@@ -12,12 +15,13 @@ MainWindow::MainWindow(QWidget *parent) :
     tab = new QTabWidget;
     tab->addTab(initialize_tab_input(), tr("Input"));
     tab->addTab(initialize_tab_parameters(), tr("Parameters"));
+    tab->addTab(initialize_tab_prevalence(), tr("Prevalence estimator"));
     tab->setCurrentIndex(0);
 
     chart = new QWidget;
     log = new QWidget;
 
-    QScrollArea* scroll_tab = new QScrollArea(this);
+    scroll_tab = new QScrollArea(this);
     scroll_tab->setWidget(tab);
     scroll_tab->setWidgetResizable(true);
     scroll_tab->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Maximum);
@@ -55,26 +59,36 @@ QDoubleSpinBox* MainWindow::create_parameter_DoubleSpinBox(QWidget *parent, doub
     return box;
 }
 
+QSpinBox* MainWindow::create_parameter_SpinBox(QWidget *parent, int min, int max, int val)
+{
+    QSpinBox *box = new QSpinBox(parent);
+    box->setMinimum(min);
+    box->setMaximum(max);
+    box->setValue(val);
+    box->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    return box;
+}
+
 QWidget *MainWindow::initialize_tab_input()
 {
     QLabel *label_mode = new QLabel(tr("Simulation start:"));
     label_mode->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     this->mode_ComboBox = new QComboBox(this);
-    this->mode_ComboBox->addItems(QStringList{"exposure", "symptom onset"});
+    this->mode_ComboBox->addItems(QStringList{"exposure", "symptom onset", "prevalence estimation"});
     this->mode_ComboBox->setCurrentIndex(0);
 
     QLabel *label_time_passed = new QLabel( ( std::string{"Time passed since "} +
-                                              this->mode_ComboBox->currentText().toStdString() +
+                                              this->mode_map_int[this->mode_ComboBox->currentIndex()] +
                                               std::string{" [days]:"}).c_str() );
     label_time_passed->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
-    this->time_passed = create_parameter_DoubleSpinBox(this, 0, 21, 0, 3);
+    this->time_passed = create_parameter_DoubleSpinBox(this, 0, 21, 0, this->default_values["time_passed"]);
 
     QLabel *label_quarantine = new QLabel(tr("Duration of quarantine [days]:"));
     label_quarantine->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
-    this->quarantine = create_parameter_DoubleSpinBox(this, 0, 35, 0, 10);
+    this->quarantine = create_parameter_DoubleSpinBox(this, 0, 35, 0, this->default_values["quarantine"]);
 
     this->test_days_box = new QGroupBox(this);
     this->test_days_box->setTitle(tr("Days to test on:"));
@@ -145,7 +159,7 @@ QWidget* MainWindow::initialize_tab_parameters()
     this->symp_mean = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["symp_mean"]);
     this->symp_uev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["symp_uev"]);
 
-    this->percentage_asymptomatic = create_parameter_DoubleSpinBox(this, 0.01, 100, 2,
+    this->percentage_asymptomatic = create_parameter_DoubleSpinBox(this, 0.00, 100, 2,
                                                                    this->default_values["percentage_asymptomatic"]);
 
     this->post_lev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["post_lev"]);
@@ -202,6 +216,303 @@ QWidget* MainWindow::initialize_tab_parameters()
 
     QWidget *widget = new QWidget;
     widget->setLayout(param_tab_layout);
+    return widget;
+}
+
+QWidget* MainWindow::initialize_tab_prevalence()
+{
+    QGroupBox *incidence_reports = new QGroupBox();
+    incidence_reports->setTitle("Incidence reports");
+
+    QGridLayout *incidence_reports_layout = new QGridLayout;
+    incidence_reports_layout->setHorizontalSpacing(20);
+    incidence_reports_layout->setSizeConstraint(QLayout::SetFixedSize);
+
+    incidence_reports->setLayout(incidence_reports_layout);
+
+    QLabel *header_incidence = new QLabel(tr("Incidence"));
+    QLabel *header_value = new QLabel(tr("Value"));
+    QLabel *header_unit = new QLabel(tr("Unit"));
+    QLabel *header_percent_of_population = new QLabel(tr("Percent of population"));
+
+    QLabel *label_week4 = new QLabel(tr("Week -4"));
+    QLabel *label_week3 = new QLabel(tr("Week -3"));
+    QLabel *label_week2 = new QLabel(tr("Week -2"));
+    QLabel *label_week1 = new QLabel(tr("Week -1"));
+    QLabel *label_week0 = new QLabel(tr("This week"));
+
+    QSpinBox *week4 = create_parameter_SpinBox(this, 0, 100000, this->default_values["week4"]);
+    QSpinBox *week3 = create_parameter_SpinBox(this, 0, 100000, this->default_values["week3"]);
+    QSpinBox *week2 = create_parameter_SpinBox(this, 0, 100000, this->default_values["week2"]);
+    QSpinBox *week1 = create_parameter_SpinBox(this, 0, 100000, this->default_values["week1"]);
+    QSpinBox *week0 = create_parameter_SpinBox(this, 0, 100000, this->default_values["week0"]);
+
+    QLabel *label_unit4 = new QLabel(tr("1/100,000 individuals per week"));
+    QLabel *label_unit3 = new QLabel(tr("1/100,000 individuals per week"));
+    QLabel *label_unit2 = new QLabel(tr("1/100,000 individuals per week"));
+    QLabel *label_unit1 = new QLabel(tr("1/100,000 individuals per week"));
+    QLabel *label_unit0 = new QLabel(tr("1/100,000 individuals per week"));
+
+    QLabel *pop_week4 = new QLabel(QString::number((float)this->default_values["week4"] / 100000 * 100, 'f', 2) + "%");
+    QLabel *pop_week3 = new QLabel(QString::number((float)this->default_values["week3"] / 100000 * 100, 'f', 2) + "%");
+    QLabel *pop_week2 = new QLabel(QString::number((float)this->default_values["week2"] / 100000 * 100, 'f', 2) + "%");
+    QLabel *pop_week1 = new QLabel(QString::number((float)this->default_values["week1"] / 100000 * 100, 'f', 2) + "%");
+    QLabel *pop_week0 = new QLabel(QString::number((float)this->default_values["week0"] / 100000 * 100, 'f', 2) + "%");
+
+    incidence_reports_layout->addWidget(header_incidence, 0, 0, Qt::AlignCenter);
+    incidence_reports_layout->addWidget(header_value, 0, 1, Qt::AlignCenter);
+    incidence_reports_layout->addWidget(header_unit, 0, 2, Qt::AlignCenter);
+    incidence_reports_layout->addWidget(header_percent_of_population, 0, 3, Qt::AlignCenter);
+
+    incidence_reports_layout->addWidget(label_week4, 1, 0);
+    incidence_reports_layout->addWidget(label_week3, 2, 0);
+    incidence_reports_layout->addWidget(label_week2, 3, 0);
+    incidence_reports_layout->addWidget(label_week1, 4, 0);
+    incidence_reports_layout->addWidget(label_week0, 5, 0);
+
+    incidence_reports_layout->addWidget(week4, 1, 1, Qt::AlignCenter);
+    incidence_reports_layout->addWidget(week3, 2, 1, Qt::AlignCenter);
+    incidence_reports_layout->addWidget(week2, 3, 1, Qt::AlignCenter);
+    incidence_reports_layout->addWidget(week1, 4, 1, Qt::AlignCenter);
+    incidence_reports_layout->addWidget(week0, 5, 1, Qt::AlignCenter);
+
+    incidence_reports_layout->addWidget(label_unit4, 1, 2, Qt::AlignLeft);
+    incidence_reports_layout->addWidget(label_unit3, 2, 2, Qt::AlignLeft);
+    incidence_reports_layout->addWidget(label_unit2, 3, 2, Qt::AlignLeft);
+    incidence_reports_layout->addWidget(label_unit1, 4, 2, Qt::AlignLeft);
+    incidence_reports_layout->addWidget(label_unit0, 5, 2, Qt::AlignLeft);
+
+    incidence_reports_layout->addWidget(pop_week4, 1, 3, Qt::AlignCenter);
+    incidence_reports_layout->addWidget(pop_week3, 2, 3, Qt::AlignCenter);
+    incidence_reports_layout->addWidget(pop_week2, 3, 3, Qt::AlignCenter);
+    incidence_reports_layout->addWidget(pop_week1, 4, 3, Qt::AlignCenter);
+    incidence_reports_layout->addWidget(pop_week0, 5, 3, Qt::AlignCenter);
+
+    //--------------
+
+    connect(week4, QOverload<int>::of(&QSpinBox::valueChanged), [=](int val){
+                                                float value = (float)val;
+                                                pop_week4->setText(QString::number(value / 100000 * 100, 'f', 3) + "%");
+                                                });
+    connect(week3, QOverload<int>::of(&QSpinBox::valueChanged), [=](int val){
+                                                float value = (float)val;
+                                                pop_week3->setText(QString::number(value / 100000 * 100, 'f', 3) + "%");
+                                                });
+    connect(week2, QOverload<int>::of(&QSpinBox::valueChanged), [=](int val){
+                                                float value = (float)val;
+                                                pop_week2->setText(QString::number(value / 100000 * 100, 'f', 3) + "%");
+                                                });
+    connect(week1, QOverload<int>::of(&QSpinBox::valueChanged), [=](int val){
+                                                float value = (float)val;
+                                                pop_week1->setText(QString::number(value / 100000 * 100, 'f', 3) + "%");
+                                                });
+    connect(week0, QOverload<int>::of(&QSpinBox::valueChanged), [=](int val){
+                                                float value = (float)val;
+                                                pop_week0->setText(QString::number(value / 100000 * 100, 'f', 3) + "%");
+                                                });
+
+    QDoubleSpinBox *percent_detected = create_parameter_DoubleSpinBox(this, 0., 100., 2, this->default_values["percent_detected"]);
+
+    QPushButton *calc_prevalence_PushButton = new QPushButton(this);
+    calc_prevalence_PushButton->setText(tr("Estimate prevalence"));
+    calc_prevalence_PushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
+    QFormLayout *formLayout = new QFormLayout;
+    formLayout->setSizeConstraint(QLayout::SetFixedSize);
+    formLayout->addRow(tr("Percent of cases detected [%]  "), percent_detected);
+    formLayout->addRow(calc_prevalence_PushButton);
+
+    //------------------------------------
+
+    QGroupBox *result_box = new QGroupBox();
+    result_box->setTitle("Today:");
+    result_box->setVisible(false);
+
+    QSizePolicy sp_retain = result_box->sizePolicy();
+    sp_retain.setRetainSizeWhenHidden(true);
+    result_box->setSizePolicy(sp_retain);
+
+    QGridLayout *result_gridLayout = new QGridLayout;
+    result_gridLayout->setHorizontalSpacing(20);
+    result_gridLayout->setSizeConstraint(QLayout::SetFixedSize);
+
+    result_box->setLayout(result_gridLayout);
+
+    QFont *bold_font = new QFont();
+    bold_font->setBold(true);
+
+    QLabel *header_predetect = new QLabel(tr("Predetection"));
+    QLabel *header_presympt = new QLabel(tr("Presymptomatic"));
+    QLabel *header_sympt = new QLabel(tr("Symptomatic"));
+    QLabel *header_postsympt = new QLabel(tr("Post-symptomatic"));
+    QLabel *header_total_prevalence = new QLabel(tr("Total prevalence"));
+    QLabel *header_prevalence = new QLabel(tr("Prevalence infectious (to be)"));
+
+    QLabel *header_best_case = new QLabel(tr("Mean"));
+    QLabel *header_worst_case = new QLabel(tr("[LEV, UEV]"));
+
+    QLabel *result_predetect_bc = new QLabel(tr(""));
+    QLabel *result_presympt_bc = new QLabel(tr(""));
+    QLabel *result_sympt_bc = new QLabel(tr(""));
+    QLabel *result_postsympt_bc = new QLabel(tr(""));
+    QLabel *result_total_prevalence_bc = new QLabel(tr(""));
+    QLabel *result_prevalence_bc = new QLabel(tr(""));
+
+    QLabel *range_predetect_bc = new QLabel(tr(""));
+    QLabel *range_presympt_bc = new QLabel(tr(""));
+    QLabel *range_sympt_bc = new QLabel(tr(""));
+    QLabel *range_postsympt_bc = new QLabel(tr(""));
+    QLabel *range_total_prevalence_bc = new QLabel(tr(""));
+    QLabel *range_prevalence_bc = new QLabel(tr(""));
+
+    result_gridLayout->addWidget(header_best_case, 1, 0, Qt::AlignLeft);
+    result_gridLayout->addWidget(header_worst_case, 2, 0, Qt::AlignLeft);
+
+    result_gridLayout->addWidget(header_predetect, 0, 1, Qt::AlignCenter);
+    result_gridLayout->addWidget(header_presympt, 0, 2, Qt::AlignCenter);
+    result_gridLayout->addWidget(header_sympt, 0, 3, Qt::AlignCenter);
+    result_gridLayout->addWidget(header_postsympt, 0, 4, Qt::AlignCenter);
+    result_gridLayout->addWidget(header_total_prevalence, 0, 5, Qt::AlignCenter);
+    result_gridLayout->addWidget(header_prevalence, 0, 6, Qt::AlignCenter);
+
+    result_gridLayout->addWidget(result_predetect_bc, 1, 1, Qt::AlignCenter);
+    result_gridLayout->addWidget(result_presympt_bc, 1, 2, Qt::AlignCenter);
+    result_gridLayout->addWidget(result_sympt_bc, 1, 3, Qt::AlignCenter);
+    result_gridLayout->addWidget(result_postsympt_bc, 1, 4, Qt::AlignCenter);
+    result_gridLayout->addWidget(result_total_prevalence_bc, 1, 5, Qt::AlignCenter);
+    result_gridLayout->addWidget(result_prevalence_bc, 1, 6, Qt::AlignCenter);
+
+    result_gridLayout->addWidget(range_predetect_bc, 2, 1, Qt::AlignCenter);
+    result_gridLayout->addWidget(range_presympt_bc, 2, 2, Qt::AlignCenter);
+    result_gridLayout->addWidget(range_sympt_bc, 2, 3, Qt::AlignCenter);
+    result_gridLayout->addWidget(range_postsympt_bc, 2, 4, Qt::AlignCenter);
+    result_gridLayout->addWidget(range_total_prevalence_bc, 2, 5, Qt::AlignCenter);
+    result_gridLayout->addWidget(range_prevalence_bc, 2, 6, Qt::AlignCenter);
+
+    connect(calc_prevalence_PushButton,
+            &QPushButton::clicked,
+            [=](){
+                    std::vector<float> incidences{float(week0->value()) / 100000 / (float(percent_detected->value()) / 100),
+                                                  float(week1->value()) / 100000 / (float(percent_detected->value()) / 100),
+                                                  float(week2->value()) / 100000 / (float(percent_detected->value()) / 100),
+                                                  float(week3->value()) / 100000 / (float(percent_detected->value()) / 100),
+                                                  float(week4->value()) / 100000 / (float(percent_detected->value()) / 100)};
+
+                    Simulation *simulation = new Simulation(this);
+                    // tuple(states, probs)
+                    std::tuple<std::vector<Eigen::MatrixXf>,
+                               std::vector<Eigen::MatrixXf>> result = simulation->run_prevalence(incidences);
+                    this->result_prevalence_estimation = result;
+
+                    result_predetect_bc->setText(QString::number(std::get<1>(result)[0](0) * 100 , 'f', 3) + "%");
+                    range_predetect_bc->setText( "["
+                                              + QString::number(std::get<1>(result)[1](0) * 100, 'f', 3)
+                                              + ", "
+                                              + QString::number(std::get<1>(result)[2](0) * 100, 'f', 3)
+                                              + "]");
+                    result_presympt_bc->setText(QString::number(std::get<1>(result)[0](1) * 100, 'f', 3) + "%");
+                    range_presympt_bc->setText( "["
+                                              + QString::number(std::get<1>(result)[1](1) * 100, 'f', 3)
+                                              + ", "
+                                              + QString::number(std::get<1>(result)[2](1) * 100, 'f', 3)
+                                              + "]");
+                    result_sympt_bc->setText(QString::number(std::get<1>(result)[0](2) * 100, 'f', 3) + "%");
+                    range_sympt_bc->setText( "["
+                                              + QString::number(std::get<1>(result)[1](2) * 100, 'f', 3)
+                                              + ", "
+                                              + QString::number(std::get<1>(result)[2](2) * 100, 'f', 3)
+                                              + "]");
+                    result_postsympt_bc->setText(QString::number(std::get<1>(result)[0](3) * 100, 'f', 3) + "%");
+                    range_postsympt_bc->setText( "["
+                                              + QString::number(std::get<1>(result)[1](3) * 100, 'f', 3)
+                                              + ", "
+                                              + QString::number(std::get<1>(result)[2](3) * 100, 'f', 3)
+                                              + "]");
+
+                    result_total_prevalence_bc->setText(QString::number((std::get<1>(result)[0](0) + std::get<1>(result)[0](1) + std::get<1>(result)[0](2)
+                                                                            + std::get<1>(result)[0](3)) * 100,'f', 3) + "%");
+                    range_total_prevalence_bc->setText( "["
+                                              + QString::number((std::get<1>(result)[1](0) + std::get<1>(result)[1](1) + std::get<1>(result)[1](2)
+                                                                + std::get<1>(result)[1](3)) * 100,'f', 3)
+                                              + ", "
+                                              + QString::number((std::get<1>(result)[2](0) + std::get<1>(result)[2](1) + std::get<1>(result)[2](2)
+                                                                + std::get<1>(result)[2](3)) * 100,'f', 3)
+                                              + "]");
+
+                    result_prevalence_bc->setText(QString::number((std::get<1>(result)[0](0) + std::get<1>(result)[0](1) + std::get<1>(result)[0](2))
+                                                                 * 100,'f', 3) + "%");
+                    range_prevalence_bc->setText( "["
+                                              + QString::number((std::get<1>(result)[1](0) + std::get<1>(result)[1](1) + std::get<1>(result)[1](2))
+                                                                * 100,'f', 3)
+                                              + ", "
+                                              + QString::number((std::get<1>(result)[2](0) + std::get<1>(result)[2](1) + std::get<1>(result)[2](2))
+                                                                * 100,'f', 3)
+                                              + "]");
+
+                    result_box->setVisible(true);
+
+                    this->scroll_tab->verticalScrollBar()->setValue( this->scroll_tab->verticalScrollBar()->maximum());
+                });
+
+    //-------------------------
+
+    std::vector<QCheckBox*> v;
+    for (int i = 0; i < 3; ++i)
+    {
+        QCheckBox *checkbox = new QCheckBox;
+        checkbox->setChecked(false);
+        checkbox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        v.push_back(checkbox);
+
+    }
+
+    for (int i = 0; i < 3; ++i)
+    {
+        connect(v[i], &QCheckBox::stateChanged, [=](int state){
+                                                            if (v[i]->isChecked()){
+                                                                for (int j = 0; j < 3; ++j)
+                                                                {
+                                                                    if (j != i)
+                                                                    {
+                                                                        v[j]->setChecked(false);
+                                                                    }
+                                                                }
+                                                                this->use_prevalence_estimation = true;
+                                                                this->initial_states = std::get<0>(this->result_prevalence_estimation)[i];
+                                                                this->pre_procedure_risk = std::get<1>(this->result_prevalence_estimation)[i](0) + std::get<1>(this->result_prevalence_estimation)[i](1) + std::get<1>(this->result_prevalence_estimation)[i](2);
+                                                                this->mode_ComboBox->setCurrentIndex(2);
+                                                                this->run_PushButton->setEnabled(true);
+                                                                this->tab->setCurrentIndex(0);
+                                                                this->scroll_tab->verticalScrollBar()->setValue(
+                                                                    this->scroll_tab->verticalScrollBar()->minimum());
+                                                            }
+                                                    });
+    }
+
+    connect(mode_ComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int state){
+                                                                    if (state != 2)
+                                                                    {
+                                                                        for (auto box : v){
+                                                                            box->setChecked(false);
+                                                                        }
+                                                                    }
+                                                                });
+
+    result_gridLayout->addWidget(new QLabel(tr("Use")), 0, 7, 1, 2, Qt::AlignCenter);
+    result_gridLayout->addWidget(v[0], 1, 7, 1, 2, Qt::AlignCenter);
+    result_gridLayout->addWidget(v[1], 2, 7, Qt::AlignCenter);
+    result_gridLayout->addWidget(v[2], 2, 8, Qt::AlignCenter);
+
+    QVBoxLayout *prevalence_tab_layout = new QVBoxLayout;
+    prevalence_tab_layout->setSizeConstraint(QLayout::SetFixedSize);
+    prevalence_tab_layout->setAlignment(Qt::AlignTop);
+
+    prevalence_tab_layout->addWidget(incidence_reports);
+    prevalence_tab_layout->addItem(formLayout);
+    prevalence_tab_layout->addWidget(result_box);
+
+    QWidget *widget = new QWidget;
+    widget->setLayout(prevalence_tab_layout);
     return widget;
 }
 
@@ -271,8 +582,17 @@ void MainWindow::update_test_date_checkboxes()
 
 void MainWindow::run_PushButton_clicked()
 {
-    Simulation *simulation = new Simulation(this);
+    Simulation *simulation;
+    if (use_prevalence_estimation)
+    {
+        simulation = new Simulation(this, initial_states, pre_procedure_risk);
+    }
+    else {
+        simulation = new Simulation(this);
+    }
+
     simulation->run();
+    simulation->output_results();
 }
 
 void MainWindow::reset_PushButton_clicked()
@@ -315,6 +635,25 @@ void MainWindow::mode_ComboBox_currentIndexChanged(int)
     QLabel* label_time_passed = qobject_cast<QLabel*>(widget);
 
     label_time_passed->setText((std::string{"Time passed since "} +
-                                this->mode_ComboBox->currentText().toStdString() +
+                                this->mode_map_int[this->mode_ComboBox->currentIndex()] +
                                 std::string{" [days]:"}).c_str() );
+
+    if (this->mode_ComboBox->currentIndex() == 2)
+    {
+        this->time_passed->setValue(0);
+        this->time_passed->setEnabled(false);
+        if (! this->use_prevalence_estimation)
+        {
+            this->run_PushButton->setEnabled(false);
+        }
+        this->tab->setCurrentIndex(2);
+        this->scroll_tab->verticalScrollBar()->setValue(
+            this->scroll_tab->verticalScrollBar()->maximum());
+    }
+    else
+    {
+        this->use_prevalence_estimation = false;
+        this->time_passed->setEnabled(true);
+        this->run_PushButton->setEnabled(true);
+    }
 }
