@@ -6,13 +6,10 @@
 #include <QVBoxLayout>
 #include <QHeaderView>
 
-#include <QtCharts/QBoxPlotSeries>
-#include <QtCharts/QBoxSet>
+#include <QtCharts/QAreaSeries>
 #include <QtCharts/QChart>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QLegendMarker>
-#include <QtCharts/QValueAxis>
-#include <QtCharts/QBarCategoryAxis>
 
 std::vector<int> Simulation::sub_compartments = {5,1,17,1,1};
 int Simulation::nr_compartments = 25;
@@ -251,15 +248,10 @@ QtCharts::QChartView* Simulation::create_plot()
     int n_time = result_matrix_mean.rows();
     QtCharts::QChart *chart = new QtCharts::QChart();
 
-    QtCharts::QBoxPlotSeries *risk_error = new QtCharts::QBoxPlotSeries();
-    risk_error->setName("Infected and in incubation or symptomatic period");
-
-    QPen red_pen(Qt::red);
-    QBrush red_brush(Qt::red);
-    risk_error->setPen(red_pen);
-    risk_error->setBrush(red_brush);
-
-    float max_value_risk{0.}, max_value_detect{0.};
+    QtCharts::QLineSeries *risk_low = new QtCharts::QLineSeries;
+    QtCharts::QLineSeries *risk_mean = new QtCharts::QLineSeries;
+    QtCharts::QLineSeries *risk_high = new QtCharts::QLineSeries;
+    risk_mean->setName("Infected and in incubation or symptomatic period");
 
     for (int j=0; j<n_time; ++j)
     {
@@ -267,20 +259,31 @@ QtCharts::QChartView* Simulation::create_plot()
         float lev = result_matrix_lev(j, Eigen::seq(0,2)).sum();
         float uev = result_matrix_uev(j, Eigen::seq(0,2)).sum();
 
-        if (uev > max_value_risk){ max_value_risk = uev; }
+        risk_low->append(j-time_passed, lev);
+        risk_mean->append(j-time_passed, m);
+        risk_high->append(j-time_passed, uev);
 
-        QtCharts::QBoxSet *set = new QtCharts::QBoxSet(lev,m,m,m,uev, QString::number(j-time_passed));
-        risk_error->append(set);
     }
-    chart->addSeries(risk_error);
+    QtCharts::QAreaSeries *risk_area = new QtCharts::QAreaSeries(risk_low, risk_high);
 
-    // QtCharts::QCandlestickSeries *detectable_error = new QtCharts::QCandlestickSeries();
-    QtCharts::QBoxPlotSeries *detectable_error = new QtCharts::QBoxPlotSeries();
-    detectable_error->setName("Infected and detectable");
-    QPen black_pen(Qt::black);
-    QBrush black_brush(Qt::black);
-    detectable_error->setPen(black_pen);
-    detectable_error->setBrush(black_brush);
+    QColor risk_color(255, 128, 128, 128);
+    QPen risk_pen(risk_color);
+    risk_area->setPen(risk_pen);
+    QBrush risk_brush(risk_color);
+    risk_area->setBrush(risk_brush);
+    QPen red_pen(Qt::red);
+    risk_mean->setPen(red_pen);
+
+    chart->addSeries(risk_area);
+    chart->addSeries(risk_mean);
+    chart->legend()->markers(risk_area)[0]->setVisible(false);
+
+    //------------------
+
+    QtCharts::QLineSeries *detect_low = new QtCharts::QLineSeries;
+    QtCharts::QLineSeries *detect_mean = new QtCharts::QLineSeries;
+    QtCharts::QLineSeries *detect_high = new QtCharts::QLineSeries;
+    detect_mean->setName("Infected and detectable");
 
     for (int j=0; j<n_time; ++j)
     {
@@ -288,41 +291,27 @@ QtCharts::QChartView* Simulation::create_plot()
         float lev = result_matrix_lev(j, 0) * (1-pcr_specificity) + result_matrix_lev(j, Eigen::seq(1,3)).sum() *pcr_sensitivity;
         float uev = result_matrix_uev(j, 0) * (1-pcr_specificity) + result_matrix_uev(j, Eigen::seq(1,3)).sum() *pcr_sensitivity;
 
-        if (uev > max_value_detect){ max_value_detect = uev; }
+        detect_low->append(j-time_passed, lev);
+        detect_mean->append(j-time_passed, m);
+        detect_high->append(j-time_passed, uev);
+    }
+    QtCharts::QAreaSeries *detect_area = new QtCharts::QAreaSeries(detect_low, detect_high);
 
-        // QtCharts::QCandlestickSet *set = new QtCharts::QCandlestickSet(m,uev,lev,m, j-time_passed);
-        QtCharts::QBoxSet *set = new QtCharts::QBoxSet(lev,m,m,m,uev, QString::number(j-time_passed));
-        detectable_error->append(set);
-    }
-    chart->addSeries(detectable_error);
+    QColor detect_color(140, 129, 152, 128);
+    QPen detect_pen(detect_color);
+    detect_area->setPen(detect_pen);
+    QBrush detect_brush(detect_color);
+    detect_area->setBrush(detect_brush);
+    QPen black_pen(Qt::black);
+    detect_mean->setPen(black_pen);
 
-    QStringList categories;
-    for (int j=0; j<n_time; ++j){ categories << QString::number(j-time_passed); }
+    chart->addSeries(detect_area);
+    chart->addSeries(detect_mean);
+    chart->legend()->markers(detect_area)[0]->setVisible(false);
 
-    QtCharts::QBarCategoryAxis *axisX_cat = new QtCharts::QBarCategoryAxis;
-    axisX_cat->setCategories(categories);
-    chart->addAxis(axisX_cat, Qt::AlignBottom);
-    axisX_cat->setTitleText("Day");
-    if (max_value_risk >= max_value_detect){
-        risk_error->attachAxis(axisX_cat);
-        detectable_error->attachAxis(axisX_cat);
-    }
-    else {
-        detectable_error->attachAxis(axisX_cat);
-        risk_error->attachAxis(axisX_cat);
-    }
-
-    QtCharts::QValueAxis *axisY = new QtCharts::QValueAxis();
-    chart->addAxis(axisY, Qt::AlignLeft);
-    if (max_value_risk >= max_value_detect){
-        risk_error->attachAxis(axisY);
-        detectable_error->attachAxis(axisY);
-    }
-    else {
-        detectable_error->attachAxis(axisY);
-        risk_error->attachAxis(axisY);
-    }
-    axisY->setTitleText("Probability");
+    chart->createDefaultAxes();
+    chart->axes(Qt::Horizontal).first()->setTitleText("Day");
+    chart->axes(Qt::Vertical).first()->setTitleText("Probability");
 
     chart->legend()->show();
     QFont f("Helvetica", 10);
@@ -330,7 +319,6 @@ QtCharts::QChartView* Simulation::create_plot()
 
     QtCharts::QChartView *chartView = new QtCharts::QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-
     return chartView;
 }
 
