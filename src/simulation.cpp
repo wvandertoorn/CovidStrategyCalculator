@@ -25,6 +25,8 @@ Simulation::Simulation(MainWindow *parent) : QObject(parent)
         case 0: initial_states(0) = 1.0; // mode exposure
                 break;
         case 1: initial_states(6) = 1.0; // mode symptom onset
+                fraction_asymtomatic = 1.;
+                break;
         case 2: break;
     }
 }
@@ -40,9 +42,6 @@ Simulation::Simulation(MainWindow *parent, Eigen::MatrixXf init_states, float pr
     tmp(Eigen::seq(0, Eigen::last-1), 0) = init_states;
     this->initial_states = tmp;
 
-    // Eigen::Map<Eigen::VectorXf> tmp(init_states.data(), init_states.size());
-    // tmp = tmp << 0; //append one state for sink node
-    // this->initial_states = tmp;
     this->pre_test_infect_prob = prerisk;
 }
 
@@ -102,7 +101,6 @@ void Simulation::collect_data(MainWindow *parent)
     mode = parent->mode_ComboBox->currentIndex();
     mode_str = parent->mode_ComboBox->currentText().toStdString();
     time_passed = parent->time_passed->value();
-    // pre_test_infect_prob = 1;
     quarantine = parent->quarantine->value();
 
     // parameters
