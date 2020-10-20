@@ -159,12 +159,12 @@ QWidget* MainWindow::initialize_tab_parameters()
     this->symp_mean = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["symp_mean"]);
     this->symp_uev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["symp_uev"]);
 
-    this->percentage_asymptomatic = create_parameter_DoubleSpinBox(this, 0.00, 100, 2,
-                                                                   this->default_values["percentage_asymptomatic"]);
-
     this->post_lev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["post_lev"]);
     this->post_mean = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["post_mean"]);
     this->post_uev = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["post_uev"]);
+
+    this->percentage_asymptomatic = create_parameter_DoubleSpinBox(this, 0.00, 100, 2,
+        this->default_values["percentage_asymptomatic"]);
 
     this->pcr_sens = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["pcr_sens"]);
     this->pcr_spec = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["pcr_spec"]);
@@ -195,21 +195,21 @@ QWidget* MainWindow::initialize_tab_parameters()
     param_tab_layout->addWidget(symp_mean, 3,2, Qt::AlignCenter);
     param_tab_layout->addWidget(symp_uev, 3,3, Qt::AlignCenter);
 
-    param_tab_layout->addWidget(label_asymp, 4, 0);
-    param_tab_layout->addWidget(percentage_asymptomatic, 4, 2, Qt::AlignCenter);
+    param_tab_layout->addWidget(label_tau_post, 4,0);
+    param_tab_layout->addWidget(post_lev, 4,1, Qt::AlignCenter);
+    param_tab_layout->addWidget(post_mean, 4,2, Qt::AlignCenter);
+    param_tab_layout->addWidget(post_uev, 4,3, Qt::AlignCenter);
 
-    param_tab_layout->addWidget(label_tau_post, 5,0);
-    param_tab_layout->addWidget(post_lev, 5,1, Qt::AlignCenter);
-    param_tab_layout->addWidget(post_mean, 5,2, Qt::AlignCenter);
-    param_tab_layout->addWidget(post_uev, 5,3, Qt::AlignCenter);
+    param_tab_layout->addWidget(label_pcr_sens, 5, 0);
+    param_tab_layout->addWidget(pcr_sens, 5, 2, Qt::AlignCenter);
 
-    param_tab_layout->addWidget(label_pcr_sens, 7, 0);
-    param_tab_layout->addWidget(pcr_sens, 7, 2, Qt::AlignCenter);
+    param_tab_layout->addWidget(label_pcr_spec, 6, 0);
+    param_tab_layout->addWidget(pcr_spec, 6, 2, Qt::AlignCenter);
 
-    param_tab_layout->addWidget(label_pcr_spec, 8, 0);
-    param_tab_layout->addWidget(pcr_spec, 8, 2, Qt::AlignCenter);
+    param_tab_layout->addWidget(label_asymp, 7, 0);
+    param_tab_layout->addWidget(percentage_asymptomatic, 7, 2, Qt::AlignCenter);
 
-    param_tab_layout->addWidget(reset_PushButton, 9, 3);
+    param_tab_layout->addWidget(reset_PushButton, 8, 3);
 
     param_tab_layout->setHorizontalSpacing(20);
     param_tab_layout->setSizeConstraint(QLayout::SetFixedSize);
