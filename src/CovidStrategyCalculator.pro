@@ -16,6 +16,5 @@ HEADERS += \
         mainwindow.h \
         simulation.h
 
-FORMS +=
-
-RESOURCES +=
+VERSION  = 1.0
+DEFINES += APP_VERSION=\\\"$$VERSION\\\"
