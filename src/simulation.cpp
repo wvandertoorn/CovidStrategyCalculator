@@ -10,6 +10,7 @@
 #include <QtCharts/QChart>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QLegendMarker>
+#include <QtCharts/QValueAxis>
 
 std::vector<int> Simulation::sub_compartments = {5,1,17,1,1};
 int Simulation::nr_compartments = 25;
@@ -251,13 +252,13 @@ QtCharts::QChartView* Simulation::create_plot()
     QtCharts::QLineSeries *risk_low = new QtCharts::QLineSeries;
     QtCharts::QLineSeries *risk_mean = new QtCharts::QLineSeries;
     QtCharts::QLineSeries *risk_high = new QtCharts::QLineSeries;
-    risk_mean->setName("Infected and in incubation or symptomatic period");
+    risk_mean->setName("Is- or will become infectious without symptoms");
 
     for (int j=0; j<n_time; ++j)
     {
-        float m = result_matrix_mean(j, Eigen::seq(0,2)).sum();
-        float lev = result_matrix_lev(j, Eigen::seq(0,2)).sum();
-        float uev = result_matrix_uev(j, Eigen::seq(0,2)).sum();
+        float m = result_matrix_mean(j, Eigen::seq(0,1)).sum() + fraction_asymtomatic * result_matrix_mean(j, 2);
+        float lev = result_matrix_lev(j, Eigen::seq(0,1)).sum() + fraction_asymtomatic * result_matrix_lev(j, 2);
+        float uev = result_matrix_uev(j, Eigen::seq(0,1)).sum() + fraction_asymtomatic * result_matrix_mean(j, 2);
 
         risk_low->append(j-time_passed, lev);
         risk_mean->append(j-time_passed, m);
@@ -312,6 +313,9 @@ QtCharts::QChartView* Simulation::create_plot()
     chart->createDefaultAxes();
     chart->axes(Qt::Horizontal).first()->setTitleText("Day");
     chart->axes(Qt::Vertical).first()->setTitleText("Probability");
+
+    QtCharts::QValueAxis *axisX = qobject_cast<QtCharts::QValueAxis*>(chart->axes(Qt::Horizontal).first());
+    axisX->setTickCount(n_time);
 
     chart->legend()->show();
     QFont f("Helvetica", 10);
