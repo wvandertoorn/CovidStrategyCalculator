@@ -98,7 +98,7 @@ std::tuple<std::vector<Eigen::MatrixXf>,
 
 void Simulation::collect_data(MainWindow *parent)
 {
-    // input
+    // strategy
     mode = parent->mode_ComboBox->currentIndex();
     mode_str = parent->mode_ComboBox->currentText().toStdString();
     time_passed = parent->time_passed->value();

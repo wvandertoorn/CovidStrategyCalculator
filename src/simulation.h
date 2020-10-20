@@ -30,7 +30,7 @@ protected:
     static std::vector<int> sub_compartments;
     static int nr_compartments;
 
-    // input tab
+    // strategy tab
     float pre_test_infect_prob{1.};
     int mode;
     std::string mode_str;

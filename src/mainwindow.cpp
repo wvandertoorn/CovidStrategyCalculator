@@ -13,7 +13,7 @@ MainWindow::MainWindow(QWidget *parent) :
     resize(size);
 
     tab = new QTabWidget;
-    tab->addTab(initialize_tab_input(), tr("Input"));
+    tab->addTab(initialize_tab_strategy(), tr("Strategy"));
     tab->addTab(initialize_tab_parameters(), tr("Parameters"));
     tab->addTab(initialize_tab_prevalence(), tr("Prevalence estimator"));
     tab->setCurrentIndex(0);
@@ -69,7 +69,7 @@ QSpinBox* MainWindow::create_parameter_SpinBox(QWidget *parent, int min, int max
     return box;
 }
 
-QWidget *MainWindow::initialize_tab_input()
+QWidget *MainWindow::initialize_tab_strategy()
 {
     QLabel *label_mode = new QLabel(tr("Simulation start:"));
     label_mode->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -113,11 +113,11 @@ QWidget *MainWindow::initialize_tab_input()
     gridLayout->setHorizontalSpacing(10);
     gridLayout->setSizeConstraint(QLayout::SetFixedSize);
 
-    QVBoxLayout *input_tab_layout = new QVBoxLayout;
-    input_tab_layout->addItem(gridLayout);
-    input_tab_layout->addWidget(scrollArea);
-    input_tab_layout->addWidget(run_PushButton);
-    input_tab_layout->setAlignment(Qt::AlignTop);
+    QVBoxLayout *strategy_tab_layout = new QVBoxLayout;
+    strategy_tab_layout->addItem(gridLayout);
+    strategy_tab_layout->addWidget(scrollArea);
+    strategy_tab_layout->addWidget(run_PushButton);
+    strategy_tab_layout->setAlignment(Qt::AlignTop);
 
     connect(mode_ComboBox, SIGNAL(currentIndexChanged(int)),
             this, SLOT(mode_ComboBox_currentIndexChanged(int)) );
@@ -128,7 +128,7 @@ QWidget *MainWindow::initialize_tab_input()
     initialize_test_date_checkboxes();
 
     QWidget *widget = new QWidget;
-    widget->setLayout(input_tab_layout);
+    widget->setLayout(strategy_tab_layout);
     return widget;
 }
 
@@ -468,7 +468,7 @@ QWidget* MainWindow::initialize_tab_prevalence()
 
     for (int i = 0; i < 3; ++i)
     {
-        connect(v[i], &QCheckBox::stateChanged, [=](int state){
+        connect(v[i], &QCheckBox::stateChanged, [=](int){
                                                             if (v[i]->isChecked()){
                                                                 for (int j = 0; j < 3; ++j)
                                                                 {
@@ -629,8 +629,8 @@ void MainWindow::quarantine_valueChanged()
 
 void MainWindow::mode_ComboBox_currentIndexChanged(int)
 {
-    QLayout *input_tab_layout = this->tab->widget(0)->layout()->itemAt(0)->layout();
-    QGridLayout *gridLayout = qobject_cast<QGridLayout*>(input_tab_layout);
+    QLayout *strategy_tab_layout = this->tab->widget(0)->layout()->itemAt(0)->layout();
+    QGridLayout *gridLayout = qobject_cast<QGridLayout*>(strategy_tab_layout);
     QWidget *widget = gridLayout->itemAtPosition(1,0)->widget();
     QLabel* label_time_passed = qobject_cast<QLabel*>(widget);
 

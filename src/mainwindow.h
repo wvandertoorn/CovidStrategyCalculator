@@ -29,7 +29,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
 
 protected:
-    // input
+    // strategy
     std::map<int, std::string> mode_map_int{{ 0, "exposure"},
                                             { 1, "symptom onset"},
                                             { 2, "exposure"}};
@@ -108,7 +108,7 @@ private:
     QDoubleSpinBox* create_parameter_DoubleSpinBox(QWidget *parent, double min, double max, int dec, double val);
     QSpinBox* create_parameter_SpinBox(QWidget *parent, int min, int max, int val);
 
-    QWidget *initialize_tab_input();
+    QWidget *initialize_tab_strategy();
     QWidget *initialize_tab_parameters();
     QWidget *initialize_tab_prevalence();
 
