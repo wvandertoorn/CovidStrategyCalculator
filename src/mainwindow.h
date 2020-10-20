@@ -43,7 +43,7 @@ protected:
     std::vector<bool> test_date_checkboxes_states{};
 
     // parameters
-    std::map<std::string, float> default_values{{ "time_passed", 3},
+    std::map<std::string, float> default_values{{ "time_passed", 0},
                                                 { "quarantine", 10},
                                                 { "inc_lev", 5.7 },
                                                 { "inc_mean", 6.77 },
@@ -63,7 +63,7 @@ protected:
                                                 { "week2", 50. },
                                                 { "week1", 50. },
                                                 { "week0", 50. },
-                                                { "percent_detected", 80.}};
+                                                { "percent_detected", 10.}};
 
     std::tuple<std::vector<Eigen::MatrixXf>, std::vector<Eigen::MatrixXf>> result_prevalence_estimation;
     Eigen::MatrixXf initial_states;
