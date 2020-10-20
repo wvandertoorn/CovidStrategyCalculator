@@ -20,9 +20,14 @@ The residual risk is defined as the probability of releasing infectious individu
 ### Mode
 We provide three scenarios, or 'modes', in which the residual risk of a strategy can be assessed. The mode of simulation can be selected in the drop down menu in the first row of the Strategy tab. Each mode has a different use-case:
 
-* 'exposure': This mode is meant to assess strategies for contact person management. The simulation starts at the date of exposure and assumes successful transmission, i.e. there is a 100% probability of becoming infectious at the start of the simulation. Exposure mode assumes symptomatic screening. This means that individuals who develop symptoms are assumed to go into isolation. They will not be released at the end of the quarantine and thus do not pose risk.
-* 'symptom onset': This mode is meant to assess de-isolation strategies. The simulation starts at the date of symptom onset, i.e. there is a 100% probability of being infectious (and symptomatic) at the start of the simulation.
-* 'prevalence estimation': This mode is meant to assess strategies for incoming travelers. This simulation is two-fold. A preliminary simulation is run based on the incidence reports of the last five weeks. Based on these reports, the prevalence of individuals that are- or will become infectious, and the initial states of the main simulation are determined. Prevalence estimation mode assumes symptomatic screening. Incoming travelers with symptoms are assumed to be denied entry or to go into isolation. Travelers who develop symptoms during the duration of the quarantine are assumed to go into isolation as well. In both cases, these individuals do no longer pose risk.
+* **exposure**: This mode is meant to assess strategies for contact person management.
+  * The simulation starts at the date of exposure and assumes successful transmission, i.e. there is a 100% probability of becoming infectious at the start of the simulation.
+  * Exposure mode assumes symptomatic screening. This means that individuals who develop symptoms are assumed to go into isolation. They will not be released at the end of the quarantine and thus do not pose risk.
+* **symptom onset**: This mode is meant to assess de-isolation strategies.
+  * The simulation starts at the date of symptom onset, i.e. there is a 100% probability of being infectious (and symptomatic) at the start of the simulation.
+* **prevalence estimation**: This mode is meant to assess strategies for incoming travelers.
+  * This simulation is two-fold. A preliminary simulation is run based on the incidence reports of the last five weeks. Based on these reports, the prevalence of individuals that are- or will become infectious, and the initial states of the main simulation are determined (see [Prevalence estimator](#prevalence-estimator) for more details).
+  * Prevalence estimation mode assumes symptomatic screening. Incoming travelers with symptoms are assumed to be denied entry or to go into isolation. Travelers who develop symptoms during the duration of the quarantine are assumed to go into isolation as well. In both cases, these individuals do no longer pose risk.
 
 ### Strategy
 The intended duration of isolation/quarantine and the time points for SARS-CoV2 PCR tests can be set in the Strategy tab. By selecting a checkbox at day x, you indicate that a test should be performed on day x. You can plan multiple tests.  
