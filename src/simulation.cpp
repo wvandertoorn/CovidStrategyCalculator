@@ -252,13 +252,13 @@ QtCharts::QChartView* Simulation::create_plot()
     QtCharts::QLineSeries *risk_low = new QtCharts::QLineSeries;
     QtCharts::QLineSeries *risk_mean = new QtCharts::QLineSeries;
     QtCharts::QLineSeries *risk_high = new QtCharts::QLineSeries;
-    risk_mean->setName("Is- or will become infectious without symptoms");
+    risk_mean->setName("Is- or will become infectious");
 
     for (int j=0; j<n_time; ++j)
     {
-        float m = result_matrix_mean(j, Eigen::seq(0,1)).sum() + fraction_asymtomatic * result_matrix_mean(j, 2);
-        float lev = result_matrix_lev(j, Eigen::seq(0,1)).sum() + fraction_asymtomatic * result_matrix_lev(j, 2);
-        float uev = result_matrix_uev(j, Eigen::seq(0,1)).sum() + fraction_asymtomatic * result_matrix_mean(j, 2);
+        float m = result_matrix_mean(j, Eigen::seq(0,2)).sum();
+        float lev = result_matrix_lev(j, Eigen::seq(0,2)).sum();
+        float uev = result_matrix_uev(j, Eigen::seq(0,2)).sum();
 
         risk_low->append(j-time_passed, lev);
         risk_mean->append(j-time_passed, m);
