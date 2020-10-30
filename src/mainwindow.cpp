@@ -389,6 +389,16 @@ QWidget* MainWindow::initialize_tab_prevalence()
     result_gridLayout->addWidget(range_total_prevalence_bc, 2, 5, Qt::AlignCenter);
     result_gridLayout->addWidget(range_prevalence_bc, 2, 6, Qt::AlignCenter);
 
+    std::vector<QCheckBox*> v;
+    for (int i = 0; i < 3; ++i)
+    {
+        QCheckBox *checkbox = new QCheckBox;
+        checkbox->setChecked(false);
+        checkbox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        v.push_back(checkbox);
+
+    }
+
     connect(calc_prevalence_PushButton,
             &QPushButton::clicked,
             [=](){
@@ -452,19 +462,15 @@ QWidget* MainWindow::initialize_tab_prevalence()
                     result_box->setVisible(true);
 
                     this->scroll_tab->verticalScrollBar()->setValue( this->scroll_tab->verticalScrollBar()->maximum());
+
+                    for (int j = 0; j < 3; ++j)
+                    {
+                        v[j]->setChecked(false);
+                    }
+                    this->run_PushButton->setEnabled(false);
                 });
 
     //-------------------------
-
-    std::vector<QCheckBox*> v;
-    for (int i = 0; i < 3; ++i)
-    {
-        QCheckBox *checkbox = new QCheckBox;
-        checkbox->setChecked(false);
-        checkbox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-        v.push_back(checkbox);
-
-    }
 
     for (int i = 0; i < 3; ++i)
     {
