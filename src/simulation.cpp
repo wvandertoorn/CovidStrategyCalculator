@@ -12,8 +12,8 @@
 #include <QtCharts/QLegendMarker>
 #include <QtCharts/QValueAxis>
 
-std::vector<int> Simulation::sub_compartments = {5,1,17,1,1};
-int Simulation::nr_compartments = 25;
+std::vector<int> Simulation::sub_compartments = {5,1,13,1,1};
+int Simulation::nr_compartments = 21;
 
 Simulation::Simulation(MainWindow *parent) : QObject(parent)
 {
