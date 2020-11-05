@@ -92,12 +92,12 @@ QWidget *MainWindow::initialize_tab_strategy()
 
     this->test_days_box = new QGroupBox(this);
     this->test_days_box->setTitle(tr("Days to test on:"));
-    QScrollArea* scrollArea = new QScrollArea(this);
-    scrollArea->setWidget(test_days_box);
-    scrollArea->setWidgetResizable(true);
-    scrollArea->setHorizontalScrollBarPolicy( Qt::ScrollBarAsNeeded);
-    scrollArea->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff);
-    scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+    // QScrollArea* scrollArea = new QScrollArea(this);
+    // scrollArea->setWidget(test_days_box);
+    // scrollArea->setWidgetResizable(true);
+    // scrollArea->setHorizontalScrollBarPolicy( Qt::ScrollBarAsNeeded);
+    // scrollArea->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff);
+    // scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
 
     this->run_PushButton = new QPushButton(this);
     run_PushButton->setText(tr("Run"));
@@ -115,8 +115,9 @@ QWidget *MainWindow::initialize_tab_strategy()
 
     QVBoxLayout *strategy_tab_layout = new QVBoxLayout;
     strategy_tab_layout->addItem(gridLayout);
-    strategy_tab_layout->addWidget(scrollArea);
+    strategy_tab_layout->addWidget(test_days_box);
     strategy_tab_layout->addWidget(run_PushButton);
+    strategy_tab_layout->setSizeConstraint(QLayout::SetFixedSize);
     strategy_tab_layout->setAlignment(Qt::AlignTop);
 
     connect(mode_ComboBox, SIGNAL(currentIndexChanged(int)),
@@ -555,6 +556,7 @@ void MainWindow::initialize_test_date_checkboxes()
 
         layout->addItem(vbox);
     }
+    layout->addStretch();
     this->test_days_box->setLayout(layout);
     this->test_date_checkboxes_states.clear();
 }
