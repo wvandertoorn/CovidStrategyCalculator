@@ -14,11 +14,6 @@
 #include <QMainWindow>
 #include <QScrollArea>
 
-namespace Ui
-{
-class MainWindow;
-}
-
 class Simulation;
 
 class MainWindow : public QMainWindow
@@ -99,8 +94,6 @@ protected:
     QWidget *log;
 
     QScrollArea* scroll_tab;
-
-    Ui::MainWindow *ui;
 
     friend class Simulation;
 
