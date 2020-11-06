@@ -530,6 +530,7 @@ void Simulation::run()
     Eigen::VectorXf rates;
     Eigen::MatrixXf S;
     Eigen::MatrixXf A;
+    Eigen::MatrixXf X;
 
     rates = calc_rates(residence_times_mean, sub_compartments);
     S = calc_S(nr_compartments);
@@ -548,4 +549,28 @@ void Simulation::run()
     A = calc_A(S, rates);
     this->X_uev = calc_X(time_passed, quarantine, A, initial_states);
     this->result_matrix_uev = assemble_phases(X_uev, sub_compartments);
+
+    /* time dependent sensitivity assay requires (up, low, low, low) and (low, up, up, up)
+     *  for worst and best case respectively.
+     */
+    std::vector<float> worst_case_extreme{residence_times_uev[0],
+                                          residence_times_lev[1],
+                                          residence_times_lev[2],
+                                          residence_times_lev[3]};
+    std::vector<float> best_case_extreme{residence_times_lev[0],
+                                         residence_times_uev[1],
+                                         residence_times_uev[2],
+                                         residence_times_uev[3]};
+
+    rates = calc_rates(worst_case_extreme, sub_compartments);
+    S = calc_S(nr_compartments);
+    A = calc_A(S, rates);
+    X = calc_X(time_passed, quarantine, A, initial_states);
+    this->assay_detectibility_worst_case = assemble_phases(X, sub_compartments);
+
+    rates = calc_rates(best_case_extreme, sub_compartments);
+    S = calc_S(nr_compartments);
+    A = calc_A(S, rates);
+    X = calc_X(time_passed, quarantine, A, initial_states);
+    this->assay_detectibility_best_case = assemble_phases(X, sub_compartments);
 }

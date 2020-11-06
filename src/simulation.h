@@ -56,7 +56,8 @@ protected:
     Eigen::MatrixXf result_matrix_mean;
     Eigen::MatrixXf result_matrix_lev;
     Eigen::MatrixXf result_matrix_uev;
-
+    Eigen::MatrixXf assay_detectibility_worst_case;
+    Eigen::MatrixXf assay_detectibility_best_case;
 
     void collect_data(MainWindow *parent);
     std::vector<int> collect_t_test(std::vector<QCheckBox*> boxes);
