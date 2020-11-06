@@ -116,14 +116,14 @@ void Simulation::collect_data(MainWindow *parent)
     residence_times_lev.push_back(parent->percentage_predetection->value()/100 * parent->inc_lev->value());
     residence_times_lev.push_back((1- parent->percentage_predetection->value()/100) * parent->inc_lev->value());
     residence_times_lev.push_back(parent->symp_lev->value());
-    residence_times_lev.push_back(parent->post_lev->value());
+    residence_times_lev.push_back(parent->post_mean->value());
 
     // upper extreme value prediction
     residence_times_uev.clear();
     residence_times_uev.push_back(parent->percentage_predetection->value()/100 * parent->inc_uev->value());
     residence_times_uev.push_back((1- parent->percentage_predetection->value()/100) * parent->inc_uev->value());
     residence_times_uev.push_back(parent->symp_uev->value());
-    residence_times_uev.push_back(parent->post_uev->value());
+    residence_times_uev.push_back(parent->post_mean->value());
 
     fraction_asymtomatic = parent->percentage_asymptomatic->value() /100;
 
