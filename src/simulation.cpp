@@ -126,8 +126,17 @@ void Simulation::collect_data(MainWindow *parent)
     residence_times_uev.push_back(parent->post_uev->value());
 
     fraction_asymtomatic = parent->percentage_asymptomatic->value() /100;
-    pcr_sensitivity = parent->pcr_sens->value() /100;
-    pcr_specificity = parent->pcr_spec->value() /100;
+
+    sensitivity = parent->pcr_sens->value() /100;
+    specificity = parent->pcr_spec->value() /100;
+
+    this->test_type = parent->test_type->currentText();
+
+    switch (parent->test_type->currentIndex()) {
+        case 0: break; // PCR
+        case 1: sensitivity = sensitivity * (parent->rel_antigen_sens->value() /100);
+                break; //antigen
+    }
 
     t_test = collect_t_test(parent->test_date_checkboxes);
 }
@@ -286,9 +295,9 @@ QtCharts::QChartView* Simulation::create_plot()
 
     for (int j=0; j<n_time; ++j)
     {
-        float m = result_matrix_mean(j, 0) * (1-pcr_specificity) + result_matrix_mean(j, Eigen::seq(1,3)).sum() *pcr_sensitivity;
-        float lev = result_matrix_lev(j, 0) * (1-pcr_specificity) + result_matrix_lev(j, Eigen::seq(1,3)).sum() *pcr_sensitivity;
-        float uev = result_matrix_uev(j, 0) * (1-pcr_specificity) + result_matrix_uev(j, Eigen::seq(1,3)).sum() *pcr_sensitivity;
+        float m = result_matrix_mean(j, 0) * (1-specificity) + result_matrix_mean(j, Eigen::seq(1,3)).sum() *sensitivity;
+        float lev = result_matrix_lev(j, 0) * (1-specificity) + result_matrix_lev(j, Eigen::seq(1,3)).sum() *sensitivity;
+        float uev = result_matrix_uev(j, 0) * (1-specificity) + result_matrix_uev(j, Eigen::seq(1,3)).sum() *sensitivity;
 
         detect_low->append(j-time_passed, lev);
         detect_mean->append(j-time_passed, m);
@@ -345,12 +354,12 @@ QTableWidget* Simulation::create_table()
 
     for (int i = 0; i< n_time; ++i)
     {
-        float perc_mean = ((1-pcr_specificity) * result_matrix_mean(i, 0) +
-                          (result_matrix_mean(i, Eigen::seq(1, 3)).sum() * pcr_sensitivity)) / start_mean * 100;
-        float perc_lev = ((1-pcr_specificity) * result_matrix_lev(i, 0) +
-                          (result_matrix_lev(i,  Eigen::seq(1, 3)).sum() * pcr_sensitivity)) / start_lev * 100;
-        float perc_uev = ((1-pcr_specificity) * result_matrix_uev(i, 0) +
-                          (result_matrix_uev(i, Eigen::seq(1, 3)).sum() * pcr_sensitivity)) / start_uev * 100;
+        float perc_mean = ((1-specificity) * result_matrix_mean(i, 0) +
+                          (result_matrix_mean(i, Eigen::seq(1, 3)).sum() * sensitivity)) / start_mean * 100;
+        float perc_lev = ((1-specificity) * result_matrix_lev(i, 0) +
+                          (result_matrix_lev(i,  Eigen::seq(1, 3)).sum() * sensitivity)) / start_lev * 100;
+        float perc_uev = ((1-specificity) * result_matrix_uev(i, 0) +
+                          (result_matrix_uev(i, Eigen::seq(1, 3)).sum() * sensitivity)) / start_uev * 100;
         table->setItem(0, i, new QTableWidgetItem(QString::number(perc_mean, 'f', 2) + "%"
                                                   + "  (" + QString::number(perc_uev, 'f', 2)
                                                   + ", " + QString::number(perc_lev, 'f', 2) + ")"));
@@ -366,12 +375,13 @@ void Simulation::create_result_log()
 {
     QLabel *label = new QLabel(tr("Result log"));
 
-    QTableWidget *table = new QTableWidget(1, 7);
+    QTableWidget *table = new QTableWidget(1, 8);
     table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     table->setHorizontalHeaderLabels((QStringList() << "simulation start"
                                                     << "time passed [days]"
                                                     << "quarantine [days]"
                                                     << "test [days]"
+                                                    << "test type"
                                                     << "pre-procedure risk [%]"
                                                     << "residual risk [%]"
                                                     << "fold risk reduction"));
@@ -407,15 +417,18 @@ void Simulation::write_row_result_log(QTableWidget *table)
         }
         days.chop(2);
         table->setItem(0,3, new QTableWidgetItem(days));
+
+        table->setItem(0,4, new QTableWidgetItem(this->test_type));
     }
     else
     {
-        table->setItem(0,3, new QTableWidgetItem());
+      table->setItem(0,3, new QTableWidgetItem());
+      table->setItem(0,4, new QTableWidgetItem());
     }
 
-    table->setItem(0,4, new QTableWidgetItem(QString::number(pre_test_infect_prob *100, 'f', 2)));
+    table->setItem(0,5, new QTableWidgetItem(QString::number(pre_test_infect_prob *100, 'f', 2)));
 
-    table->setItem(0,5, new QTableWidgetItem(QString::number(calculate_strategy_result(result_matrix_mean)* 100,
+    table->setItem(0,6, new QTableWidgetItem(QString::number(calculate_strategy_result(result_matrix_mean)* 100,
                                                              'f', 2)
                                              + "  ("
                                              + QString::number(calculate_strategy_result(result_matrix_uev)* 100,
@@ -424,7 +437,7 @@ void Simulation::write_row_result_log(QTableWidget *table)
                                              + QString::number(calculate_strategy_result(result_matrix_lev)* 100,
                                                                'f', 2)
                                              + ")" ));
-    table->setItem(0,6, new QTableWidgetItem(QString::number(pre_test_infect_prob
+    table->setItem(0,7, new QTableWidgetItem(QString::number(pre_test_infect_prob
                                                                / calculate_strategy_result(result_matrix_mean),
                                                              'f', 2)
                                              + "  ("
@@ -437,7 +450,7 @@ void Simulation::write_row_result_log(QTableWidget *table)
                                                                'f', 2)
                                              + ")" ));
 
-    for (int i=0; i<7; ++i)
+    for (int i=0; i<8; ++i)
     {
         table->item(0,i)->setFlags(table->item(0,i)->flags() &  ~Qt::ItemIsEditable);
     }
@@ -461,8 +474,8 @@ float Simulation::calculate_strategy_result(Eigen::MatrixXf matrix)
     {
         for (int day : t_test)
         {
-            risk = risk * (1.-pcr_sensitivity) * ( matrix(day, 1) + fraction_asymtomatic * matrix(day, 2) ) +
-                   risk * pcr_specificity * matrix(day, 0);
+            risk = risk * (1.-sensitivity) * ( matrix(day, 1) + fraction_asymtomatic * matrix(day, 2) ) +
+                   risk * specificity * matrix(day, 0);
         }
         if (t_test.back() < matrix.rows()-1)
         {

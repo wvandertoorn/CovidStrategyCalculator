@@ -42,6 +42,8 @@ protected:
     std::vector<QCheckBox*> test_date_checkboxes{};
     std::vector<bool> test_date_checkboxes_states{};
 
+    QComboBox *test_type;
+
     // parameters
     std::map<std::string, float> default_values{{ "time_passed", 0},
                                                 { "quarantine", 10},
@@ -58,6 +60,7 @@ protected:
                                                 { "post_uev", 6.25 },
                                                 { "pcr_sens", 80 },
                                                 { "pcr_spec", 99.5 },
+                                                { "relative_antigen_sens", 85},
                                                 { "week4", 50. },
                                                 { "week3", 50. },
                                                 { "week2", 50. },
@@ -88,6 +91,7 @@ protected:
 
     QDoubleSpinBox *pcr_sens;
     QDoubleSpinBox *pcr_spec;
+    QDoubleSpinBox *rel_antigen_sens;
 
     // layout
     QTabWidget *tab;

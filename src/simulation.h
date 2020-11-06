@@ -37,6 +37,7 @@ protected:
     int time_passed;
     int quarantine;
     std::vector<int> t_test{};
+    QString test_type;
 
     // parameters tab
     std::vector<float> residence_times_mean;
@@ -44,8 +45,8 @@ protected:
     std::vector<float> residence_times_uev;
 
     float fraction_asymtomatic;
-    float pcr_sensitivity;
-    float pcr_specificity;
+    float sensitivity;
+    float specificity;
 
     // simulation
     Eigen::VectorXf initial_states;

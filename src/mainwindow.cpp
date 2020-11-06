@@ -103,6 +103,17 @@ QWidget *MainWindow::initialize_tab_strategy()
     run_PushButton->setText(tr("Run"));
     run_PushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
+    QLabel *test_type_label = new  QLabel(tr("Type of test: "));
+    this->test_type = new QComboBox(this);
+    this->test_type->addItems(QStringList{"PCR", "Antigen"});
+    this->test_type->setCurrentIndex(0);
+
+    QHBoxLayout *test_type_layout = new QHBoxLayout;
+    test_type_layout->addWidget(test_type_label);
+    test_type_layout->addWidget(this->test_type);
+    test_type_layout->addStretch();
+    test_type_layout->setSizeConstraint(QLayout::SetFixedSize);
+
     QGridLayout *gridLayout = new QGridLayout;
     gridLayout->addWidget(label_mode, 0, 0);
     gridLayout->addWidget(mode_ComboBox, 0, 1, Qt::AlignLeft);
@@ -116,6 +127,7 @@ QWidget *MainWindow::initialize_tab_strategy()
     QVBoxLayout *strategy_tab_layout = new QVBoxLayout;
     strategy_tab_layout->addItem(gridLayout);
     strategy_tab_layout->addWidget(test_days_box);
+    strategy_tab_layout->addItem(test_type_layout);
     strategy_tab_layout->addWidget(run_PushButton);
     strategy_tab_layout->setSizeConstraint(QLayout::SetFixedSize);
     strategy_tab_layout->setAlignment(Qt::AlignTop);
@@ -169,6 +181,7 @@ QWidget* MainWindow::initialize_tab_parameters()
 
     this->pcr_sens = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["pcr_sens"]);
     this->pcr_spec = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["pcr_spec"]);
+    this->rel_antigen_sens = create_parameter_DoubleSpinBox(this, 0.01, 100, 2, this->default_values["relative_antigen_sens"]);
 
     reset_PushButton = new QPushButton(this);
     reset_PushButton->setText(tr("Reset defaults"));
@@ -207,10 +220,13 @@ QWidget* MainWindow::initialize_tab_parameters()
     param_tab_layout->addWidget(label_pcr_spec, 6, 0);
     param_tab_layout->addWidget(pcr_spec, 6, 2, Qt::AlignCenter);
 
-    param_tab_layout->addWidget(label_asymp, 7, 0);
-    param_tab_layout->addWidget(percentage_asymptomatic, 7, 2, Qt::AlignCenter);
+    param_tab_layout->addWidget(new QLabel(tr("Antigen-test relative sensitivity")), 7, 0);
+    param_tab_layout->addWidget(rel_antigen_sens, 7, 2, Qt::AlignCenter);
 
-    param_tab_layout->addWidget(reset_PushButton, 8, 3);
+    param_tab_layout->addWidget(label_asymp, 8, 0);
+    param_tab_layout->addWidget(percentage_asymptomatic, 8, 2, Qt::AlignCenter);
+
+    param_tab_layout->addWidget(reset_PushButton, 9, 3);
 
     param_tab_layout->setHorizontalSpacing(20);
     param_tab_layout->setSizeConstraint(QLayout::SetFixedSize);
