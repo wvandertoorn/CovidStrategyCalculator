@@ -82,6 +82,7 @@ protected:
     void update_result_log();
 
     float calculate_strategy_result(Eigen::MatrixXf matrix);
+    Eigen::MatrixXf calculate_assay_sensitivity();
 signals:
 
 public slots:

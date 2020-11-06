@@ -289,33 +289,24 @@ QtCharts::QChartView* Simulation::create_plot()
     //------------------
 
     QtCharts::QLineSeries *detect_low = new QtCharts::QLineSeries;
-    QtCharts::QLineSeries *detect_mean = new QtCharts::QLineSeries;
     QtCharts::QLineSeries *detect_high = new QtCharts::QLineSeries;
-    detect_mean->setName("Infected and detectable");
 
+    Eigen::MatrixXf detectable = calculate_assay_sensitivity();
     for (int j=0; j<n_time; ++j)
     {
-        float m = result_matrix_mean(j, 0) * (1-specificity) + result_matrix_mean(j, Eigen::seq(1,3)).sum() *sensitivity;
-        float lev = result_matrix_lev(j, 0) * (1-specificity) + result_matrix_lev(j, Eigen::seq(1,3)).sum() *sensitivity;
-        float uev = result_matrix_uev(j, 0) * (1-specificity) + result_matrix_uev(j, Eigen::seq(1,3)).sum() *sensitivity;
-
-        detect_low->append(j-time_passed, lev);
-        detect_mean->append(j-time_passed, m);
-        detect_high->append(j-time_passed, uev);
+        detect_low->append(j-time_passed, detectable(j,0));
+        detect_high->append(j-time_passed, detectable(j,1));
     }
     QtCharts::QAreaSeries *detect_area = new QtCharts::QAreaSeries(detect_low, detect_high);
+    detect_area->setName("Infected and detectable");
 
     QColor detect_color(140, 129, 152, 128);
     QPen detect_pen(detect_color);
     detect_area->setPen(detect_pen);
     QBrush detect_brush(detect_color);
     detect_area->setBrush(detect_brush);
-    QPen black_pen(Qt::black);
-    detect_mean->setPen(black_pen);
 
     chart->addSeries(detect_area);
-    chart->addSeries(detect_mean);
-    chart->legend()->markers(detect_area)[0]->setVisible(false);
 
     chart->createDefaultAxes();
     chart->axes(Qt::Horizontal).first()->setTitleText("Day");
@@ -486,6 +477,28 @@ float Simulation::calculate_strategy_result(Eigen::MatrixXf matrix)
     return risk;
 }
 
+Eigen::MatrixXf Simulation::calculate_assay_sensitivity()
+{
+    int n_time = result_matrix_mean.rows();
+    Eigen::MatrixXf detectibility(n_time, 2);
+
+    for (int j=0; j<n_time; ++j)
+    {
+        float m = result_matrix_mean(j, 0) * (1-specificity) + result_matrix_mean(j, Eigen::seq(1,3)).sum() *sensitivity;
+        float lev = assay_detectibility_worst_case(j, 0) * (1-specificity) + assay_detectibility_worst_case(j, Eigen::seq(1,3)).sum() *sensitivity;
+        float uev = assay_detectibility_best_case(j, 0) * (1-specificity) + assay_detectibility_best_case(j, Eigen::seq(1,3)).sum() *sensitivity;
+
+        std::vector<float> v{m, lev, uev};
+
+        int maxElementIndex = std::max_element(v.begin(),v.end()) - v.begin();
+        int minElementIndex = std::min_element(v.begin(),v.end()) - v.begin();
+
+        detectibility(j,0) =  v[minElementIndex];
+        detectibility(j,1) =  v[maxElementIndex];
+    }
+    return detectibility;
+}
+
 void Simulation::output_results()
 {
     QtCharts::QChartView* plot = create_plot();
@@ -573,4 +586,6 @@ void Simulation::run()
     A = calc_A(S, rates);
     X = calc_X(time_passed, quarantine, A, initial_states);
     this->assay_detectibility_best_case = assemble_phases(X, sub_compartments);
+
+    calculate_assay_sensitivity();
 }
