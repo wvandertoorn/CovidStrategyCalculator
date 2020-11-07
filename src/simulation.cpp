@@ -371,15 +371,15 @@ void Simulation::create_result_log()
 
     QTableWidget *table = new QTableWidget(1, 9);
     table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    table->setHorizontalHeaderLabels((QStringList() << "simulation start"
-                                                    << "time passed [days]"
-                                                    << "quarantine [days]"
+    table->setHorizontalHeaderLabels((QStringList() << "mode"
+                                                    << "time passed \n [days]"
+                                                    << "quarantine/isolation \n [days]"
                                                     << "sympt screening \n (perc asympt)"
-                                                    << "test [days]"
+                                                    << "test \n [days]"
                                                     << "test type"
-                                                    << "pre-procedure risk [%]"
-                                                    << "residual risk [%]"
-                                                    << "fold risk reduction"));
+                                                    << "pre-procedure \n risk [%]"
+                                                    << "residual risk \n [%]"
+                                                    << "fold risk \n reduction"));
 
     write_row_result_log(table);
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
