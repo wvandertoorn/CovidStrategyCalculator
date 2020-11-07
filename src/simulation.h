@@ -46,7 +46,7 @@ protected:
 
     float fraction_asymtomatic;
     bool use_symptomatic_screening;
-    
+
     float sensitivity;
     float specificity;
 
@@ -68,7 +68,8 @@ protected:
                                std::vector<int> comp);
     Eigen::MatrixXf calc_S(int n);
     Eigen::MatrixXf calc_A(Eigen::MatrixXf S_,
-                           Eigen::VectorXf r);
+                           Eigen::VectorXf r,
+                           std::vector<int> comp);
     Eigen::MatrixXf calc_X(int delay,
                            int qrntn,
                            Eigen::MatrixXf A_,
