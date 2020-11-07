@@ -45,6 +45,8 @@ protected:
     std::vector<float> residence_times_uev;
 
     float fraction_asymtomatic;
+    bool use_symptomatic_screening;
+    
     float sensitivity;
     float specificity;
 

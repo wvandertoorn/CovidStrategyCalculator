@@ -90,6 +90,10 @@ QWidget *MainWindow::initialize_tab_strategy()
 
     this->quarantine = create_parameter_DoubleSpinBox(this, 0, 35, 0, this->default_values["quarantine"]);
 
+    this->use_symptomatic_screening = new QCheckBox;
+    use_symptomatic_screening->setChecked(true);
+    use_symptomatic_screening->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
     this->test_days_box = new QGroupBox(this);
     this->test_days_box->setTitle(tr("Days to test on:"));
 
@@ -115,6 +119,8 @@ QWidget *MainWindow::initialize_tab_strategy()
     gridLayout->addWidget(time_passed, 1, 1, Qt::AlignLeft);
     gridLayout->addWidget(label_quarantine, 2, 0);
     gridLayout->addWidget(quarantine, 2, 1, Qt::AlignLeft);
+    gridLayout->addWidget(new QLabel(tr("Symptomatic screening")), 3, 0);
+    gridLayout->addWidget(use_symptomatic_screening, 3, 1, Qt::AlignLeft);
     gridLayout->setHorizontalSpacing(10);
     gridLayout->setSizeConstraint(QLayout::SetFixedSize);
 
@@ -657,6 +663,10 @@ void MainWindow::mode_ComboBox_currentIndexChanged(int)
                                 this->mode_map_int[this->mode_ComboBox->currentIndex()] +
                                 std::string{" [days]:"}).c_str() );
 
+    this->use_symptomatic_screening->setChecked(true);
+    this->use_symptomatic_screening->setEnabled(true);
+    gridLayout->itemAtPosition(3,0)->widget()->setEnabled(true);
+
     if (this->mode_ComboBox->currentIndex() == 2)
     {
         this->time_passed->setValue(0);
@@ -674,5 +684,12 @@ void MainWindow::mode_ComboBox_currentIndexChanged(int)
         this->use_prevalence_estimation = false;
         this->time_passed->setEnabled(true);
         this->run_PushButton->setEnabled(true);
+    }
+
+    if (this->mode_ComboBox->currentIndex() == 1) // system onset mode
+    {
+        this->use_symptomatic_screening->setChecked(false);
+        this->use_symptomatic_screening->setEnabled(false);
+        gridLayout->itemAtPosition(3,0)->widget()->setEnabled(false);
     }
 }

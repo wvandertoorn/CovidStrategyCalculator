@@ -25,7 +25,6 @@ Simulation::Simulation(MainWindow *parent) : QObject(parent)
         case 0: initial_states(0) = 1.0; // mode exposure
                 break;
         case 1: initial_states(6) = 1.0; // mode symptom onset
-                fraction_asymtomatic = 1.;
                 break;
         case 2: break;
     }
@@ -102,6 +101,7 @@ void Simulation::collect_data(MainWindow *parent)
     mode_str = parent->mode_ComboBox->currentText().toStdString();
     time_passed = parent->time_passed->value();
     quarantine = parent->quarantine->value();
+    use_symptomatic_screening = parent->use_symptomatic_screening->isChecked();
 
     // parameters
     // mean prediction
@@ -133,10 +133,13 @@ void Simulation::collect_data(MainWindow *parent)
     this->test_type = parent->test_type->currentText();
 
     switch (parent->test_type->currentIndex()) {
-        case 0: break; // PCR
         case 1: sensitivity = sensitivity * (parent->rel_antigen_sens->value() /100);
                 break; //antigen
     }
+
+    if (use_symptomatic_screening){
+        fraction_asymtomatic = parent->percentage_asymptomatic->value() /100;
+    } else {fraction_asymtomatic = 1.;}
 
     t_test = collect_t_test(parent->test_date_checkboxes);
 }
@@ -366,11 +369,12 @@ void Simulation::create_result_log()
 {
     QLabel *label = new QLabel(tr("Result log"));
 
-    QTableWidget *table = new QTableWidget(1, 8);
+    QTableWidget *table = new QTableWidget(1, 9);
     table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     table->setHorizontalHeaderLabels((QStringList() << "simulation start"
                                                     << "time passed [days]"
                                                     << "quarantine [days]"
+                                                    << "sympt screening \n (perc asympt)"
                                                     << "test [days]"
                                                     << "test type"
                                                     << "pre-procedure risk [%]"
@@ -399,6 +403,15 @@ void Simulation::write_row_result_log(QTableWidget *table)
     table->setItem(0,1, new QTableWidgetItem(QString::number(this->time_passed)));
     table->setItem(0,2, new QTableWidgetItem(QString::number(this->quarantine)));
 
+    QString boolText = this->use_symptomatic_screening ? "yes" : "no";
+
+    if (this->use_symptomatic_screening){
+        table->setItem(0,3, new QTableWidgetItem(boolText
+                                                 + " ("
+                                                 + QString::number(this->fraction_asymtomatic * 100)
+                                                 + "%)"));
+    } else {table->setItem(0,3, new QTableWidgetItem(boolText));}
+
     if (this->t_test.size())
     {
         QString days{};
@@ -407,19 +420,19 @@ void Simulation::write_row_result_log(QTableWidget *table)
             days += (QString::number(day - this->time_passed) + ", ");
         }
         days.chop(2);
-        table->setItem(0,3, new QTableWidgetItem(days));
+        table->setItem(0,4, new QTableWidgetItem(days));
 
-        table->setItem(0,4, new QTableWidgetItem(this->test_type));
+        table->setItem(0,5, new QTableWidgetItem(this->test_type));
     }
     else
     {
-      table->setItem(0,3, new QTableWidgetItem());
       table->setItem(0,4, new QTableWidgetItem());
+      table->setItem(0,5, new QTableWidgetItem());
     }
 
-    table->setItem(0,5, new QTableWidgetItem(QString::number(pre_test_infect_prob *100, 'f', 2)));
+    table->setItem(0,6, new QTableWidgetItem(QString::number(pre_test_infect_prob *100, 'f', 2)));
 
-    table->setItem(0,6, new QTableWidgetItem(QString::number(calculate_strategy_result(result_matrix_mean)* 100,
+    table->setItem(0,7, new QTableWidgetItem(QString::number(calculate_strategy_result(result_matrix_mean)* 100,
                                                              'f', 2)
                                              + "  ("
                                              + QString::number(calculate_strategy_result(result_matrix_uev)* 100,
@@ -428,7 +441,7 @@ void Simulation::write_row_result_log(QTableWidget *table)
                                              + QString::number(calculate_strategy_result(result_matrix_lev)* 100,
                                                                'f', 2)
                                              + ")" ));
-    table->setItem(0,7, new QTableWidgetItem(QString::number(pre_test_infect_prob
+    table->setItem(0,8, new QTableWidgetItem(QString::number(pre_test_infect_prob
                                                                / calculate_strategy_result(result_matrix_mean),
                                                              'f', 2)
                                              + "  ("
@@ -441,7 +454,7 @@ void Simulation::write_row_result_log(QTableWidget *table)
                                                                'f', 2)
                                              + ")" ));
 
-    for (int i=0; i<8; ++i)
+    for (int i=0; i<9; ++i)
     {
         table->item(0,i)->setFlags(table->item(0,i)->flags() &  ~Qt::ItemIsEditable);
     }

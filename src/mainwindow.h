@@ -34,6 +34,8 @@ protected:
     QDoubleSpinBox *time_passed;
     QDoubleSpinBox *quarantine;
 
+    QCheckBox *use_symptomatic_screening;    
+
     std::vector<QCheckBox*> test_date_checkboxes{};
     std::vector<bool> test_date_checkboxes_states{};
 
