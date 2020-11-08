@@ -71,6 +71,7 @@ protected:
 
     Eigen::VectorXf calc_rates(std::vector<float> times,
                                std::vector<int> comp);
+    Eigen::VectorXf FOR_vector(std::vector<int> comp);
     Eigen::MatrixXf calc_S(int n);
     Eigen::MatrixXf calc_A(Eigen::MatrixXf S_,
                            Eigen::VectorXf r,
@@ -94,6 +95,8 @@ protected:
 
     float calculate_strategy_result(Eigen::MatrixXf matrix);
     Eigen::MatrixXf calculate_assay_sensitivity();
+
+    std::tuple<Eigen::MatrixXf, std::vector<int>, float> calculate_strategy_with_test(Eigen::MatrixXf A);
 signals:
 
 public slots:

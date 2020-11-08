@@ -52,7 +52,6 @@ Simulation::Simulation(MainWindow *parent, Eigen::MatrixXf init_states, float pr
                                                                  + sub_compartments[1]
                                                                  + sub_compartments[2] -1), 0)
                                                                 .sum();
-    //TODO read only location?
 
     this->initial_states = init_states;
 
@@ -191,6 +190,27 @@ Eigen::VectorXf Simulation::calc_rates(std::vector<float> times,
                 counter++;
         }
     }
+    return rates;
+}
+
+Eigen::VectorXf Simulation::FOR_vector(std::vector<int> comp)
+{
+    int n = std::accumulate(comp.begin(), comp.end(), 0);
+    Eigen::VectorXf rates;
+    rates.setOnes(n);
+
+    int counter = 0;
+    for (int j=0; j < comp[0]; ++j)
+    {
+            rates[counter] = specificity;
+            counter++;
+    }
+    for (int j=0; j < comp[1] + comp[2]; ++j)
+    {
+            rates[counter] = 1 - sensitivity;
+            counter++;
+    }
+
     return rates;
 }
 
@@ -603,6 +623,9 @@ void Simulation::run()
     rates = calc_rates(residence_times_mean, sub_compartments);
     S = calc_S(nr_compartments);
     A = calc_A(S, rates, sub_compartments);
+    if (t_test.size()){
+        auto results = calculate_strategy_with_test(A);
+    }
     this->X_mean = calc_X(time_passed, quarantine, A, initial_states);
     this->result_matrix_mean = assemble_phases(X_mean, sub_compartments);
     this->t_inf_risk_mean = calc_risk_at_T(A, initial_states, t_inf);
@@ -649,4 +672,72 @@ void Simulation::run()
     this->assay_detectibility_best_case = assemble_phases(X, sub_compartments);
 
     calculate_assay_sensitivity();
+}
+
+std::tuple<Eigen::MatrixXf, std::vector<int>, float> Simulation::calculate_strategy_with_test(Eigen::MatrixXf A){
+    int time_end = this->quarantine + this->time_passed;
+
+    Eigen::MatrixXf X0(nr_compartments, 1);
+    X0.array() = this->initial_states.array();
+
+    Eigen::MatrixXf X_total(time_end + 1 + this->t_test.size(), nr_compartments);
+
+    X0.resize(1, nr_compartments);
+    X_total(0, Eigen::all).array() = X0.array();
+    X0.resize(nr_compartments, 1);
+
+    Eigen::MatrixXf FOR(nr_compartments, 1);
+    FOR.array() = FOR_vector(sub_compartments).array();
+    FOR.resize(1, nr_compartments);
+
+    std::vector<int> time_plot{0};
+
+    int t_diff = 0;
+    int t_counter = this->time_passed;
+
+    for (int test_day : this->t_test){
+        t_diff = test_day - t_counter;
+
+        std::vector<int> v(t_diff);
+        std::iota(v.begin(), v.end(), t_counter + 1);
+        time_plot.insert( time_plot.end(), v.begin(), v.end() );
+        time_plot.push_back(t_counter + t_diff);
+
+        Eigen::MatrixXf X = calc_X(t_diff, 0, A, X0);
+
+        Eigen::MatrixXf final_state(1, nr_compartments);
+        final_state.array() = X(Eigen::last, Eigen::all).array() * FOR.array();
+
+        final_state(0, nr_compartments - 1) -= (X(Eigen::last, Eigen::seq(sub_compartments[0], Eigen::last)).array()
+                                                - final_state(0, Eigen::seq(sub_compartments[0], Eigen::last)).array())
+                                               .sum();
+
+        X_total(Eigen::seq(t_counter + 1, t_counter + t_diff), Eigen::all).array() = X(Eigen::seq(1, Eigen::last), Eigen::all).array();
+        X_total(t_counter + t_diff + 1, Eigen::all).array() = final_state.array();
+        final_state.resize(nr_compartments, 1);
+        X0.array() = final_state.array();
+        t_counter += t_diff;
+    }
+    if (time_end > t_test.back()){
+        t_diff = time_end - t_counter;
+        Eigen::MatrixXf X = calc_X(t_diff, 0, A, X0);
+        X_total(Eigen::seq(t_counter + 1, t_counter + t_diff), Eigen::all).array() = X(Eigen::seq(1, Eigen::last), Eigen::all).array();
+
+        std::vector<int> v(t_diff);
+        std::iota(v.begin(), v.end(), t_counter + 1);
+        time_plot.insert( time_plot.end(), v.begin(), v.end() );
+    }
+
+    Eigen::MatrixXf tmp = X_total(Eigen::last, Eigen::all);
+    tmp.resize(nr_compartments, 1);
+    X0.array() = tmp.array();
+
+    float risk_T = calc_risk_at_T( A, X0, this->t_inf - (float) time_end);
+
+    float pre_procedure = risk_T - X_total(0, Eigen::last);
+    float post_procedure = risk_T - X_total(Eigen::last, Eigen::last);
+
+    float fold_risk_reduction = pre_procedure / post_procedure;
+
+    return std::make_tuple(X_total, time_plot, fold_risk_reduction);
 }
