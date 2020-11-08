@@ -14,6 +14,7 @@
 
 std::vector<int> Simulation::sub_compartments = {5,1,13,1,1}; //predetect, presympt, symp, post, risk-node (sink is dropped)
 int Simulation::nr_compartments = std::accumulate(sub_compartments.begin(), sub_compartments.end(), 0);
+float Simulation::t_inf = 100.;
 
 Simulation::Simulation(MainWindow *parent) : QObject(parent)
 {
@@ -261,6 +262,16 @@ Eigen::MatrixXf  Simulation::calc_X(int delay,
     }
 
     return X;
+}
+
+float Simulation::calc_risk_at_T(Eigen::MatrixXf A,
+                                Eigen::VectorXf states,
+                                float time_T)
+{
+    Eigen::MatrixXf X;
+    X = (A * time_T).exp() * states;
+
+    return X(0, Eigen::last);
 }
 
 Eigen::MatrixXf Simulation::assemble_phases(Eigen::MatrixXf X,
@@ -591,18 +602,24 @@ void Simulation::run()
     A = calc_A(S, rates, sub_compartments);
     this->X_mean = calc_X(time_passed, quarantine, A, initial_states);
     this->result_matrix_mean = assemble_phases(X_mean, sub_compartments);
+    this->t_inf_risk_mean = calc_risk_at_T(A, initial_states, t_inf);
+    this->pre_procedure_risk_mean = t_inf_risk_mean - initial_states(Eigen::last, 0);
 
     rates = calc_rates(residence_times_lev, sub_compartments);
     S = calc_S(nr_compartments);
     A = calc_A(S, rates, sub_compartments);
     this->X_lev = calc_X(time_passed, quarantine, A, initial_states);
     this->result_matrix_lev = assemble_phases(X_lev, sub_compartments);
+    this->t_inf_risk_lev = calc_risk_at_T(A, initial_states, t_inf);
+    this->pre_procedure_risk_lev = t_inf_risk_lev - initial_states(Eigen::last, 0);
 
     rates = calc_rates(residence_times_uev, sub_compartments);
     S = calc_S(nr_compartments);
     A = calc_A(S, rates, sub_compartments);
     this->X_uev = calc_X(time_passed, quarantine, A, initial_states);
     this->result_matrix_uev = assemble_phases(X_uev, sub_compartments);
+    this->t_inf_risk_uev = calc_risk_at_T(A, initial_states, t_inf);
+    this->pre_procedure_risk_uev = t_inf_risk_uev - initial_states(Eigen::last, 0);
 
     /* time dependent sensitivity assay requires (up, low, low, low) and (low, up, up, up)
      *  for worst and best case respectively.

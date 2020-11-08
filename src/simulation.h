@@ -29,6 +29,8 @@ protected:
     MainWindow* m_parent = nullptr;
     static std::vector<int> sub_compartments;
     static int nr_compartments;
+    static float t_inf;
+
 
     // strategy tab
     float pre_test_infect_prob{1.};
@@ -36,6 +38,7 @@ protected:
     std::string mode_str;
     int time_passed;
     int quarantine;
+    bool use_symptomatic_screening;
     std::vector<int> t_test{};
     QString test_type;
 
@@ -44,11 +47,10 @@ protected:
     std::vector<float> residence_times_lev;
     std::vector<float> residence_times_uev;
 
-    float fraction_asymtomatic;
-    bool use_symptomatic_screening;
-
     float sensitivity;
     float specificity;
+
+    float fraction_asymtomatic;
 
     // simulation
     Eigen::VectorXf initial_states;
@@ -60,6 +62,9 @@ protected:
     Eigen::MatrixXf result_matrix_uev;
     Eigen::MatrixXf assay_detectibility_worst_case;
     Eigen::MatrixXf assay_detectibility_best_case;
+
+    float t_inf_risk_mean, t_inf_risk_lev, t_inf_risk_uev;
+    float pre_procedure_risk_mean, pre_procedure_risk_lev, pre_procedure_risk_uev;
 
     void collect_data(MainWindow *parent);
     std::vector<int> collect_t_test(std::vector<QCheckBox*> boxes);
@@ -74,6 +79,9 @@ protected:
                            int qrntn,
                            Eigen::MatrixXf A_,
                            Eigen::VectorXf states);
+    float calc_risk_at_T(Eigen::MatrixXf A,
+                        Eigen::VectorXf states,
+                        float time_T);
     Eigen::MatrixXf assemble_phases(Eigen::MatrixXf X_,
                                     std::vector<int> comp);
 
