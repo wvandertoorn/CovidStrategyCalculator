@@ -62,9 +62,11 @@ protected:
     Eigen::MatrixXf result_matrix_uev;
     Eigen::MatrixXf assay_detectibility_worst_case;
     Eigen::MatrixXf assay_detectibility_best_case;
+    Eigen::MatrixXf assay_detectibility_mean_case;
 
-    float t_inf_risk_mean, t_inf_risk_lev, t_inf_risk_uev;
-    float pre_procedure_risk_mean, pre_procedure_risk_lev, pre_procedure_risk_uev;
+    float risk_T_mean, risk_T_lev, risk_T_uev;
+    float fold_RR_mean, fold_RR_lev, fold_RR_uev;
+    std::vector<int> time_for_plot;
 
     void collect_data(MainWindow *parent);
     std::vector<int> collect_t_test(std::vector<QCheckBox*> boxes);

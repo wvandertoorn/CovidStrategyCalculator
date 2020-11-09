@@ -638,37 +638,10 @@ void Simulation::run()
     Eigen::MatrixXf S;
     Eigen::MatrixXf A;
     Eigen::MatrixXf X;
+    float pre_procedure, post_procedure;
 
-    rates = calc_rates(residence_times_mean, sub_compartments);
     S = calc_S(nr_compartments);
-    A = calc_A(S, rates, sub_compartments);
-    if (t_test.size()){
-        auto results = calculate_strategy_with_test(A);
-    }
-    this->X_mean = calc_X(time_passed, quarantine, A, initial_states);
-    this->result_matrix_mean = assemble_phases(X_mean, sub_compartments);
-    this->t_inf_risk_mean = calc_risk_at_T(A, initial_states, t_inf);
-    this->pre_procedure_risk_mean = t_inf_risk_mean - initial_states(Eigen::last, 0);
 
-    rates = calc_rates(residence_times_lev, sub_compartments);
-    S = calc_S(nr_compartments);
-    A = calc_A(S, rates, sub_compartments);
-    this->X_lev = calc_X(time_passed, quarantine, A, initial_states);
-    this->result_matrix_lev = assemble_phases(X_lev, sub_compartments);
-    this->t_inf_risk_lev = calc_risk_at_T(A, initial_states, t_inf);
-    this->pre_procedure_risk_lev = t_inf_risk_lev - initial_states(Eigen::last, 0);
-
-    rates = calc_rates(residence_times_uev, sub_compartments);
-    S = calc_S(nr_compartments);
-    A = calc_A(S, rates, sub_compartments);
-    this->X_uev = calc_X(time_passed, quarantine, A, initial_states);
-    this->result_matrix_uev = assemble_phases(X_uev, sub_compartments);
-    this->t_inf_risk_uev = calc_risk_at_T(A, initial_states, t_inf);
-    this->pre_procedure_risk_uev = t_inf_risk_uev - initial_states(Eigen::last, 0);
-
-    /* time dependent sensitivity assay requires (up, low, low, low) and (low, up, up, up)
-     *  for worst and best case respectively.
-     */
     std::vector<float> worst_case_extreme{residence_times_uev[0],
                                           residence_times_lev[1],
                                           residence_times_lev[2],
@@ -678,15 +651,84 @@ void Simulation::run()
                                          residence_times_uev[2],
                                          residence_times_uev[3]};
 
-    rates = calc_rates(worst_case_extreme, sub_compartments);
-    S = calc_S(nr_compartments);
+    // mean case
+    rates = calc_rates(residence_times_mean, sub_compartments);
     A = calc_A(S, rates, sub_compartments);
+    if (t_test.size()){
+        auto results = calculate_strategy_with_test(A);
+        this->X_mean = std::get<0>(results);
+        this->result_matrix_mean = assemble_phases(X_mean, sub_compartments);
+        this->time_for_plot = std::get<1>(results);
+        this->risk_T_mean = std::get<2>(results);
+
+        pre_procedure = calc_risk_at_T(A, initial_states,  t_inf) - initial_states(Eigen::last);
+        post_procedure = risk_T_mean - X_mean(Eigen::last, Eigen::last);
+    }
+    else {
+        this->X_mean = calc_X(time_passed, quarantine, A, initial_states);
+        this->result_matrix_mean = assemble_phases(X_mean, sub_compartments);
+        this->risk_T_mean = calc_risk_at_T(A, initial_states,  t_inf);
+
+        pre_procedure = risk_T_mean - X_mean(0, Eigen::last);
+        post_procedure = risk_T_mean - X_mean(Eigen::last, Eigen::last);
+
+        std::vector<int> v(time_passed + quarantine + 1);
+        std::iota(v.begin(), v.end(), -time_passed);
+        this->time_for_plot = v;
+    }
+    this->fold_RR_mean = pre_procedure / post_procedure;
+
+    X = calc_X(time_passed, quarantine, A, initial_states);
+    this->assay_detectibility_mean_case = assemble_phases(X, sub_compartments);
+
+    // worst case in terms of detectibility (long predetect, short rest )
+    rates = calc_rates(worst_case_extreme, sub_compartments);
+    A = calc_A(S, rates, sub_compartments);
+    if (t_test.size()){
+        auto results = calculate_strategy_with_test(A);
+        this->X_lev = std::get<0>(results);
+        this->result_matrix_lev = assemble_phases(X_lev, sub_compartments);
+        this->risk_T_lev = std::get<2>(results);
+
+        pre_procedure = calc_risk_at_T(A, initial_states,  t_inf) - initial_states(Eigen::last);
+        post_procedure = risk_T_lev - X_lev(Eigen::last, Eigen::last);
+
+    }
+    else {
+        this->X_lev = calc_X(time_passed, quarantine, A, initial_states);
+        this->result_matrix_lev = assemble_phases(X_lev, sub_compartments);
+        this->risk_T_lev = calc_risk_at_T(A, initial_states,  t_inf);
+
+        pre_procedure = risk_T_lev - X_lev(0, Eigen::last);
+        post_procedure = risk_T_lev - X_lev(Eigen::last, Eigen::last);
+    }
+    this->fold_RR_lev = pre_procedure / post_procedure;
+
     X = calc_X(time_passed, quarantine, A, initial_states);
     this->assay_detectibility_worst_case = assemble_phases(X, sub_compartments);
 
+    // best case in terms of detectibility (short predetect, long rest )
     rates = calc_rates(best_case_extreme, sub_compartments);
-    S = calc_S(nr_compartments);
     A = calc_A(S, rates, sub_compartments);
+    if (t_test.size()){
+        auto results = calculate_strategy_with_test(A);
+        this->X_uev = std::get<0>(results);
+        this->result_matrix_uev = assemble_phases(X_uev, sub_compartments);
+        this->risk_T_uev = std::get<2>(results);
+
+        pre_procedure = calc_risk_at_T(A, initial_states,  t_inf) - initial_states(Eigen::last);
+        post_procedure = risk_T_uev - X_uev(Eigen::last, Eigen::last);
+    }
+    else {
+        this->X_uev = calc_X(time_passed, quarantine, A, initial_states);
+        this->result_matrix_uev = assemble_phases(X_uev, sub_compartments);
+        this->risk_T_uev = calc_risk_at_T(A, initial_states,  t_inf);
+
+        pre_procedure = risk_T_uev - X_uev(0, Eigen::last);
+        post_procedure = risk_T_uev - X_uev(Eigen::last, Eigen::last);
+    }
+    this->fold_RR_uev = pre_procedure / post_procedure;
+
     X = calc_X(time_passed, quarantine, A, initial_states);
     this->assay_detectibility_best_case = assemble_phases(X, sub_compartments);
 
