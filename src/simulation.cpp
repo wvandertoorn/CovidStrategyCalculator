@@ -441,16 +441,15 @@ void Simulation::create_result_log()
 {
     QLabel *label = new QLabel(tr("Result log"));
 
-    QTableWidget *table = new QTableWidget(1, 9);
+    QTableWidget *table = new QTableWidget(1, 8);
     table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     table->setHorizontalHeaderLabels((QStringList() << "mode"
+                                                    << "sympt screening \n (perc asympt)"
                                                     << "time passed \n [days]"
                                                     << "quarantine/isolation \n [days]"
-                                                    << "sympt screening \n (perc asympt)"
                                                     << "test \n [days]"
                                                     << "test type"
-                                                    << "pre-procedure \n risk [%]"
-                                                    << "residual risk \n [%]"
+                                                    << "start risk \n [%]"
                                                     << "fold risk \n reduction"));
 
     write_row_result_log(table);
@@ -472,17 +471,18 @@ void Simulation::create_result_log()
 void Simulation::write_row_result_log(QTableWidget *table)
 {
     table->setItem(0, 0, new QTableWidgetItem(QString(this->mode_str.c_str())));
-    table->setItem(0, 1, new QTableWidgetItem(QString::number(this->time_passed)));
-    table->setItem(0, 2, new QTableWidgetItem(QString::number(this->quarantine)));
 
     QString boolText = this->use_symptomatic_screening ? "yes" : "no";
 
     if (this->use_symptomatic_screening){
-        table->setItem(0, 3, new QTableWidgetItem(boolText
+        table->setItem(0, 1, new QTableWidgetItem(boolText
                                                  + " ("
                                                  + QString::number(this->fraction_asymtomatic * 100)
                                                  + "%)"));
-    } else {table->setItem(0, 3, new QTableWidgetItem(boolText));}
+    } else {table->setItem(0, 1, new QTableWidgetItem(boolText));}
+
+    table->setItem(0, 2, new QTableWidgetItem(QString::number(this->time_passed)));
+    table->setItem(0, 3, new QTableWidgetItem(QString::number(this->quarantine)));
 
     if (this->t_test.size())
     {
@@ -504,29 +504,26 @@ void Simulation::write_row_result_log(QTableWidget *table)
 
     table->setItem(0, 6, new QTableWidgetItem(QString::number(pre_test_infect_prob *100, 'f', 2)));
 
-    table->setItem(0, 7, new QTableWidgetItem(QString::number(calculate_strategy_result(result_matrix_mean)* 100,
+    // table->setItem(0, 7, new QTableWidgetItem(QString::number(calculate_strategy_result(result_matrix_mean)* 100,
+    //                                                          'f', 2)
+    //                                          + "  ("
+    //                                          + QString::number(calculate_strategy_result(result_matrix_uev)* 100,
+    //                                                            'f', 2)
+    //                                          + ", "
+    //                                          + QString::number(calculate_strategy_result(result_matrix_lev)* 100,
+    //                                                            'f', 2)
+    //                                          + ")" ));
+    table->setItem(0, 7, new QTableWidgetItem(QString::number(this->fold_RR_mean,
                                                              'f', 2)
                                              + "  ("
-                                             + QString::number(calculate_strategy_result(result_matrix_uev)* 100,
+                                             + QString::number(this->fold_RR_uev,
                                                                'f', 2)
                                              + ", "
-                                             + QString::number(calculate_strategy_result(result_matrix_lev)* 100,
-                                                               'f', 2)
-                                             + ")" ));
-    table->setItem(0, 8, new QTableWidgetItem(QString::number(pre_test_infect_prob
-                                                               / calculate_strategy_result(result_matrix_mean),
-                                                             'f', 2)
-                                             + "  ("
-                                             + QString::number(pre_test_infect_prob
-                                                                 / calculate_strategy_result(result_matrix_uev),
-                                                               'f', 2)
-                                             + ", "
-                                             + QString::number(pre_test_infect_prob
-                                                                 / calculate_strategy_result(result_matrix_lev),
+                                             + QString::number(this->fold_RR_lev,
                                                                'f', 2)
                                              + ")" ));
 
-    for (int i = 0; i < 9; ++i)
+    for (int i = 0; i < 8; ++i)
     {
         table->item(0,i)->setFlags(table->item(0,i)->flags() &  ~Qt::ItemIsEditable);
     }
