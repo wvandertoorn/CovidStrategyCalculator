@@ -268,8 +268,11 @@ float Simulation::calc_risk_at_T(Eigen::MatrixXf A,
                                 Eigen::VectorXf states,
                                 float time_T)
 {
+    int n = states.size();
     Eigen::MatrixXf X;
-    X = (A * time_T).exp() * states;
+    X.setZero(1, n);
+
+    X.row(0) = (A * time_T).exp()*states;
 
     return X(0, Eigen::last);
 }
