@@ -568,12 +568,12 @@ float Simulation::calculate_strategy_result(Eigen::MatrixXf matrix)
 
 Eigen::MatrixXf Simulation::calculate_assay_sensitivity()
 {
-    int n_time = result_matrix_mean.rows();
+    int n_time = assay_detectibility_mean_case.rows();
     Eigen::MatrixXf detectibility(n_time, 2);
 
     for (int j=0; j<n_time; ++j)
     {
-        float m = result_matrix_mean(j, 0) * (1 - specificity) + result_matrix_mean(j, Eigen::seq(1, 3)).sum() * sensitivity;
+        float m = assay_detectibility_mean_case(j, 0) * (1 - specificity) + assay_detectibility_mean_case(j, Eigen::seq(1, 3)).sum() * sensitivity;
         float lev = assay_detectibility_worst_case(j, 0) * (1 - specificity) + assay_detectibility_worst_case(j, Eigen::seq(1, 3)).sum() * sensitivity;
         float uev = assay_detectibility_best_case(j, 0) * (1 - specificity) + assay_detectibility_best_case(j, Eigen::seq(1, 3)).sum() * sensitivity;
 
@@ -585,6 +585,10 @@ Eigen::MatrixXf Simulation::calculate_assay_sensitivity()
         detectibility(j, 0) =  v[minElementIndex];
         detectibility(j, 1) =  v[maxElementIndex];
     }
+
+    // float infected_population = initial_states(Eigen::seq(0, Eigen::last - 1)).sum();
+    // return detectibility.array() / infected_population;
+
     return detectibility;
 }
 
