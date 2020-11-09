@@ -310,6 +310,16 @@ Eigen::MatrixXf Simulation::assemble_phases(Eigen::MatrixXf X,
 }
 
 QtCharts::QChartView* Simulation::create_plot()
+Eigen::MatrixXf Simulation::risk_node_to_relative_residual_risk(Eigen::MatrixXf risk, float risk_T){
+
+    Eigen::MatrixXf risk_T_vector(risk.rows(), 1);
+    risk_T_vector.fill(risk_T);
+
+    risk.array() = risk_T_vector.array() - risk.array();
+
+    risk.array() = (risk.array() / risk(0,0)).array() * 100.;
+    return risk;
+}
 {
     int n_time = result_matrix_mean.rows();
     QtCharts::QChart *chart = new QtCharts::QChart();

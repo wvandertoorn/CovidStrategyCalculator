@@ -87,6 +87,7 @@ protected:
                                     std::vector<int> comp);
 
     QtCharts::QChartView* create_plot();
+    Eigen::MatrixXf risk_node_to_relative_residual_risk(Eigen::MatrixXf risk, float risk_T);
     QTableWidget* create_table();
 
     void create_result_log();
