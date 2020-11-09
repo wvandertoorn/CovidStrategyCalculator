@@ -675,12 +675,11 @@ void Simulation::run()
 }
 
 std::tuple<Eigen::MatrixXf, std::vector<int>, float> Simulation::calculate_strategy_with_test(Eigen::MatrixXf A){
-    int time_end = this->quarantine + this->time_passed;
 
     Eigen::MatrixXf X0(nr_compartments, 1);
     X0.array() = this->initial_states.array();
 
-    Eigen::MatrixXf X_total(time_end + 1 + this->t_test.size(), nr_compartments);
+    Eigen::MatrixXf X_total(this->quarantine + this->time_passed + 1 + this->t_test.size(), nr_compartments);
 
     X0.resize(1, nr_compartments);
     X_total(0, Eigen::all).array() = X0.array();
@@ -690,10 +689,11 @@ std::tuple<Eigen::MatrixXf, std::vector<int>, float> Simulation::calculate_strat
     FOR.array() = FOR_vector(sub_compartments).array();
     FOR.resize(1, nr_compartments);
 
-    std::vector<int> time_plot{0};
+    std::vector<int> time_plot{- this->time_passed};
 
     int t_diff = 0;
-    int t_counter = this->time_passed;
+    int row_counter = time_plot.size();
+    int t_counter = time_plot.back();
 
     for (int test_day : this->t_test){
         t_diff = test_day - t_counter;
@@ -708,20 +708,21 @@ std::tuple<Eigen::MatrixXf, std::vector<int>, float> Simulation::calculate_strat
         Eigen::MatrixXf final_state(1, nr_compartments);
         final_state.array() = X(Eigen::last, Eigen::all).array() * FOR.array();
 
-        final_state(0, nr_compartments - 1) -= (X(Eigen::last, Eigen::seq(sub_compartments[0], Eigen::last)).array()
+        final_state(0, nr_compartments - 1) += (X(Eigen::last, Eigen::seq(sub_compartments[0], Eigen::last)).array()
                                                 - final_state(0, Eigen::seq(sub_compartments[0], Eigen::last)).array())
                                                .sum();
 
-        X_total(Eigen::seq(t_counter + 1, t_counter + t_diff), Eigen::all).array() = X(Eigen::seq(1, Eigen::last), Eigen::all).array();
-        X_total(t_counter + t_diff + 1, Eigen::all).array() = final_state.array();
+        X_total(Eigen::seq(row_counter, row_counter + t_diff -1), Eigen::all).array() = X(Eigen::seq(1, Eigen::last), Eigen::all).array();
+        X_total(row_counter + t_diff , Eigen::all).array() = final_state.array();
         final_state.resize(nr_compartments, 1);
         X0.array() = final_state.array();
-        t_counter += t_diff;
+        row_counter = time_plot.size();
+        t_counter = time_plot.back();
     }
-    if (time_end > t_test.back()){
-        t_diff = time_end - t_counter;
+    if (this->quarantine > t_counter){
+        t_diff = this->quarantine - t_counter;
         Eigen::MatrixXf X = calc_X(t_diff, 0, A, X0);
-        X_total(Eigen::seq(t_counter + 1, t_counter + t_diff), Eigen::all).array() = X(Eigen::seq(1, Eigen::last), Eigen::all).array();
+        X_total(Eigen::seq(row_counter, row_counter + t_diff -1), Eigen::all).array() = X(Eigen::seq(1, Eigen::last), Eigen::all).array();
 
         std::vector<int> v(t_diff);
         std::iota(v.begin(), v.end(), t_counter + 1);
@@ -732,12 +733,7 @@ std::tuple<Eigen::MatrixXf, std::vector<int>, float> Simulation::calculate_strat
     tmp.resize(nr_compartments, 1);
     X0.array() = tmp.array();
 
-    float risk_T = calc_risk_at_T( A, X0, this->t_inf - (float) time_end);
+    float risk_T = calc_risk_at_T( A, X0, this->t_inf - (float) this->quarantine - (float) this->time_passed);
 
-    float pre_procedure = risk_T - X_total(0, Eigen::last);
-    float post_procedure = risk_T - X_total(Eigen::last, Eigen::last);
-
-    float fold_risk_reduction = pre_procedure / post_procedure;
-
-    return std::make_tuple(X_total, time_plot, fold_risk_reduction);
+    return std::make_tuple(X_total, time_plot, risk_T);
 }
