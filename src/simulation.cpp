@@ -249,6 +249,7 @@ Eigen::MatrixXf Simulation::calc_A(Eigen::MatrixXf S,
     A_augmented(Eigen::seq(0, Eigen::last-1),Eigen::seq(0, Eigen::last-1)) = A_square;
     A_augmented(Eigen::last, Eigen::seq(comp[0], comp[0] + comp[1] - 1)).array() = 1.;
     A_augmented(Eigen::last, Eigen::seq(comp[0] + comp[1], comp[0] + comp[1] + comp[2] - 1)).array() = fraction_asymtomatic;
+
     return A_augmented;
 }
 
@@ -267,7 +268,6 @@ Eigen::MatrixXf  Simulation::calc_X(int delay,
     }
 
     int n = states.size();
-
     Eigen::MatrixXf X;
     X.setZero(t_end, n);
 
@@ -298,7 +298,7 @@ Eigen::MatrixXf Simulation::assemble_phases(Eigen::MatrixXf X,
 {
     int n_time = X.rows();
     Eigen::MatrixXf assembled(n_time, 5);
-    int col_counter=0;
+    int col_counter = 0;
     for (int i=0; i<5; ++i)
     {
         assembled(Eigen::all, i) = X(Eigen::all, Eigen::seq(col_counter,
