@@ -221,7 +221,7 @@ QWidget* MainWindow::initialize_tab_parameters()
     param_tab_layout->addWidget(label_pcr_spec, 6, 0);
     param_tab_layout->addWidget(pcr_spec, 6, 2, Qt::AlignCenter);
 
-    param_tab_layout->addWidget(new QLabel(tr("Antigen-test relative sensitivity")), 7, 0);
+    param_tab_layout->addWidget(new QLabel(tr("Antigen-test sensitivity, relative to PCR-test [%]")), 7, 0);
     param_tab_layout->addWidget(rel_antigen_sens, 7, 2, Qt::AlignCenter);
 
     param_tab_layout->addWidget(label_asymp, 8, 0);

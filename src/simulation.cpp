@@ -31,7 +31,6 @@ Simulation::Simulation(MainWindow *parent) : QObject(parent)
                 int first_symptomatic_compartment = sub_compartments[0] + sub_compartments[1];
                 this->initial_states(first_symptomatic_compartment) = 1.0; // mode symptom onset
                 initial_states(nr_compartments - 1) = 1.0;
-                //TODO read only location?
                 break;
         }
         case 2: break;
@@ -43,10 +42,7 @@ Simulation::Simulation(MainWindow *parent, Eigen::MatrixXf init_states, float pr
     this->m_parent = parent;
     collect_data(this->m_parent);
 
-    // Eigen::MatrixXf tmp;
-    // tmp.setZero(nr_compartments, 1);
     init_states.resize(nr_compartments, 1);
-    // tmp(Eigen::seq(0, Eigen::last-1), 0).array() = init_states.array();
     init_states(nr_compartments - 1, 0) = init_states(Eigen::seq(sub_compartments[0],
                                                                  sub_compartments[0]
                                                                  + sub_compartments[1]
@@ -122,6 +118,10 @@ void Simulation::collect_data(MainWindow *parent)
     use_symptomatic_screening = parent->use_symptomatic_screening->isChecked();
 
     // parameters
+    if (use_symptomatic_screening){
+        fraction_asymtomatic = parent->percentage_asymptomatic->value() /100;
+    } else {fraction_asymtomatic = 1.;}
+
     // mean prediction
     residence_times_mean.clear();
     residence_times_mean.push_back(parent->percentage_predetection->value()/100 * parent->inc_mean->value());
@@ -143,8 +143,6 @@ void Simulation::collect_data(MainWindow *parent)
     residence_times_uev.push_back(parent->symp_uev->value());
     residence_times_uev.push_back(parent->post_mean->value());
 
-    fraction_asymtomatic = parent->percentage_asymptomatic->value() /100;
-
     sensitivity = parent->pcr_sens->value() /100;
     specificity = parent->pcr_spec->value() /100;
 
@@ -154,10 +152,6 @@ void Simulation::collect_data(MainWindow *parent)
         case 1: sensitivity = sensitivity * (parent->rel_antigen_sens->value() /100);
                 break; //antigen
     }
-
-    if (use_symptomatic_screening){
-        fraction_asymtomatic = parent->percentage_asymptomatic->value() /100;
-    } else {fraction_asymtomatic = 1.;}
 
     t_test = collect_t_test(parent->test_date_checkboxes);
 }
