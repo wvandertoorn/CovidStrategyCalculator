@@ -90,7 +90,8 @@ protected:
                                     std::vector<int> comp);
 
     Eigen::MatrixXf risk_node_to_relative_residual_risk(Eigen::MatrixXf risk, float risk_T);
-    QtCharts::QChartView* create_plot(Eigen::MatrixXf mean,
+    QtCharts::QChartView* create_plot(Eigen::MatrixXf detectable,
+                                      Eigen::MatrixXf mean,
                                       Eigen::MatrixXf uev,
                                       Eigen::MatrixXf lev,
                                       std::vector<int> time_range_for_plot);

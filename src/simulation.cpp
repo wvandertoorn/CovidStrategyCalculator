@@ -322,21 +322,40 @@ Eigen::MatrixXf Simulation::risk_node_to_relative_residual_risk(Eigen::MatrixXf 
 }
 
 
-QtCharts::QChartView* Simulation::create_plot(Eigen::MatrixXf mean,
+QtCharts::QChartView* Simulation::create_plot(Eigen::MatrixXf detectable,
+                                              Eigen::MatrixXf mean,
                                               Eigen::MatrixXf uev,
                                               Eigen::MatrixXf lev,
                                               std::vector<int> time_range_for_plot
                                         )
 {
-    int n_time = mean.rows();
     QtCharts::QChart *chart = new QtCharts::QChart();
+
+    QtCharts::QLineSeries *detect_low = new QtCharts::QLineSeries;
+    QtCharts::QLineSeries *detect_high = new QtCharts::QLineSeries;
+
+    for (int j=0; j < detectable.rows(); ++j)
+    {
+        detect_low->append(j-time_passed, detectable(j,0));
+        detect_high->append(j-time_passed, detectable(j,1));
+    }
+    QtCharts::QAreaSeries *detect_area = new QtCharts::QAreaSeries(detect_low, detect_high);
+    detect_area->setName("Assay sensitivity");
+
+    QColor detect_color(140, 129, 152, 128);
+    QPen detect_pen(detect_color);
+    detect_area->setPen(detect_pen);
+    QBrush detect_brush(detect_color);
+    detect_area->setBrush(detect_brush);
+
+    chart->addSeries(detect_area);
 
     QtCharts::QLineSeries *risk_low = new QtCharts::QLineSeries;
     QtCharts::QLineSeries *risk_mean = new QtCharts::QLineSeries;
     QtCharts::QLineSeries *risk_high = new QtCharts::QLineSeries;
-    risk_mean->setName("Residual risk");
+    risk_mean->setName("Relative residual risk");
 
-    for (int j=0; j<n_time; ++j)
+    for (int j = 0; j <  (int) time_range_for_plot.size(); ++j)
     {
         risk_low->append(time_range_for_plot[j], lev(j, 0));
         risk_mean->append(time_range_for_plot[j], mean(j, 0));
@@ -358,25 +377,6 @@ QtCharts::QChartView* Simulation::create_plot(Eigen::MatrixXf mean,
 
     //------------------
 
-    QtCharts::QLineSeries *detect_low = new QtCharts::QLineSeries;
-    QtCharts::QLineSeries *detect_high = new QtCharts::QLineSeries;
-
-    Eigen::MatrixXf detectable = calculate_assay_sensitivity();
-    for (int j=0; j<n_time; ++j)
-    {
-        detect_low->append(j-time_passed, detectable(j,0));
-        detect_high->append(j-time_passed, detectable(j,1));
-    }
-    QtCharts::QAreaSeries *detect_area = new QtCharts::QAreaSeries(detect_low, detect_high);
-
-    QColor detect_color(140, 129, 152, 128);
-    QPen detect_pen(detect_color);
-    detect_area->setPen(detect_pen);
-    QBrush detect_brush(detect_color);
-    detect_area->setBrush(detect_brush);
-
-    chart->addSeries(detect_area);
-
     chart->createDefaultAxes();
     switch (this->mode) {
         case 0: chart->axes(Qt::Horizontal).first()->setTitleText("Days since infection");
@@ -386,7 +386,7 @@ QtCharts::QChartView* Simulation::create_plot(Eigen::MatrixXf mean,
         case 2: chart->axes(Qt::Horizontal).first()->setTitleText("Days since exposure");
                 break;
     }
-    chart->axes(Qt::Vertical).first()->setTitleText("%");
+    chart->axes(Qt::Vertical).first()->setTitleText("Percent");
 
     QtCharts::QValueAxis *axisX = qobject_cast<QtCharts::QValueAxis*>(chart->axes(Qt::Horizontal).first());
     axisX->setTickCount(time_passed + quarantine  + 1);
@@ -403,9 +403,11 @@ QtCharts::QChartView* Simulation::create_plot(Eigen::MatrixXf mean,
     return chartView;
 }
 
-QTableWidget* Simulation::create_table()
+QTableWidget* Simulation::create_table(Eigen::MatrixXf detectable,
+                                       Eigen::MatrixXf mean,
+                                       Eigen::MatrixXf uev,
+                                       Eigen::MatrixXf lev)
 {
-    int n_time = assay_detectibility_mean_case.rows();
     int offset = time_passed;
 
     QStringList h_labels;
@@ -597,7 +599,9 @@ void Simulation::output_results()
     Eigen::MatrixXf uev = risk_node_to_relative_residual_risk( X_uev(Eigen::all, Eigen::last), risk_T_preprocedure_uev);
     Eigen::MatrixXf lev = risk_node_to_relative_residual_risk( X_lev(Eigen::all, Eigen::last), risk_T_preprocedure_lev);
 
-    QtCharts::QChartView* plot = create_plot(mean, uev, lev, time_for_plot);
+    Eigen::MatrixXf detectable = calculate_assay_sensitivity();
+
+    QtCharts::QChartView* plot = create_plot(detectable, mean, uev, lev, time_for_plot);
 
     QTableWidget* table = create_table();
 
