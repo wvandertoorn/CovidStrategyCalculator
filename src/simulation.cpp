@@ -760,21 +760,23 @@ std::tuple<Eigen::MatrixXf, std::vector<int>, float> Simulation::calculate_strat
     FOR.array() = FOR_vector(sub_compartments).array();
     FOR.resize(1, nr_compartments);
 
-    std::vector<int> time_plot{- this->time_passed};
+    std::vector<int> time_plot{ 0 - this->time_passed};
 
-    int t_diff = 0;
-    int row_counter = time_plot.size();
+    int days_till_next_test{0}, days_till_end{0};
+    int row_counter = 1;
     int t_counter = time_plot.back();
 
+    // test_day is counted relative from exposure date, i.e. test at day 3 with delay of 3 days: test_day==6
     for (int test_day : this->t_test){
-        t_diff = test_day - t_counter;
+        test_day = test_day - this->time_passed;
+        days_till_next_test = test_day - t_counter;
 
-        std::vector<int> v(t_diff);
+        std::vector<int> v(days_till_next_test);
         std::iota(v.begin(), v.end(), t_counter + 1);
         time_plot.insert( time_plot.end(), v.begin(), v.end() );
-        time_plot.push_back(t_counter + t_diff);
+        time_plot.push_back(t_counter + days_till_next_test);
 
-        Eigen::MatrixXf X = calc_X(t_diff, 0, A, X0);
+        Eigen::MatrixXf X = calc_X(days_till_next_test, 0, A, X0);
 
         Eigen::MatrixXf final_state(1, nr_compartments);
         final_state.array() = X(Eigen::last, Eigen::all).array() * FOR.array();
@@ -783,19 +785,19 @@ std::tuple<Eigen::MatrixXf, std::vector<int>, float> Simulation::calculate_strat
                                                 - final_state(0, Eigen::seq(sub_compartments[0], Eigen::last)).array())
                                                .sum();
 
-        X_total(Eigen::seq(row_counter, row_counter + t_diff -1), Eigen::all).array() = X(Eigen::seq(1, Eigen::last), Eigen::all).array();
-        X_total(row_counter + t_diff , Eigen::all).array() = final_state.array();
+        X_total(Eigen::seq(row_counter, row_counter + days_till_next_test -1), Eigen::all).array() = X(Eigen::seq(1, Eigen::last), Eigen::all).array();
+        X_total(row_counter + days_till_next_test , Eigen::all).array() = final_state.array();
         final_state.resize(nr_compartments, 1);
         X0.array() = final_state.array();
         row_counter = time_plot.size();
         t_counter = time_plot.back();
     }
     if (this->quarantine > t_counter){
-        t_diff = this->quarantine - t_counter;
-        Eigen::MatrixXf X = calc_X(t_diff, 0, A, X0);
-        X_total(Eigen::seq(row_counter, row_counter + t_diff -1), Eigen::all).array() = X(Eigen::seq(1, Eigen::last), Eigen::all).array();
+        days_till_end = this->quarantine - t_counter;
+        Eigen::MatrixXf X = calc_X(days_till_end, 0, A, X0);
+        X_total(Eigen::seq(row_counter, row_counter + days_till_end -1), Eigen::all).array() = X(Eigen::seq(1, Eigen::last), Eigen::all).array();
 
-        std::vector<int> v(t_diff);
+        std::vector<int> v(days_till_end);
         std::iota(v.begin(), v.end(), t_counter + 1);
         time_plot.insert( time_plot.end(), v.begin(), v.end() );
     }
