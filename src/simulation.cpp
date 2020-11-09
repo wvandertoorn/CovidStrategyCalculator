@@ -59,6 +59,7 @@ std::tuple<std::vector<Eigen::MatrixXf>,
 {
     time_passed = 0;
     this->fraction_asymtomatic = 1.;
+    this->t_test = {};
     //TODO document the fact that the prevalence estimator does not assume symptomatic screening in the first simulation.
 
     Eigen::MatrixXf states_today_mean, states_today_lev, states_today_uev,
