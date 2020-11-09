@@ -594,9 +594,9 @@ Eigen::MatrixXf Simulation::calculate_assay_sensitivity()
 
 void Simulation::output_results()
 {
-    Eigen::MatrixXf mean = risk_node_to_relative_residual_risk( X_mean(Eigen::all, Eigen::last), risk_T_mean);
-    Eigen::MatrixXf uev = risk_node_to_relative_residual_risk( X_uev(Eigen::all, Eigen::last), risk_T_uev);
-    Eigen::MatrixXf lev = risk_node_to_relative_residual_risk( X_lev(Eigen::all, Eigen::last), risk_T_lev);
+    Eigen::MatrixXf mean = risk_node_to_relative_residual_risk( X_mean(Eigen::all, Eigen::last), risk_T_preprocedure_mean);
+    Eigen::MatrixXf uev = risk_node_to_relative_residual_risk( X_uev(Eigen::all, Eigen::last), risk_T_preprocedure_uev);
+    Eigen::MatrixXf lev = risk_node_to_relative_residual_risk( X_lev(Eigen::all, Eigen::last), risk_T_preprocedure_lev);
 
     QtCharts::QChartView* plot = create_plot(mean, uev, lev, time_for_plot);
 
@@ -663,18 +663,20 @@ void Simulation::run()
         this->X_mean = std::get<0>(results);
         this->result_matrix_mean = assemble_phases(X_mean, sub_compartments);
         this->time_for_plot = std::get<1>(results);
-        this->risk_T_mean = std::get<2>(results);
+        this->risk_T_postprocedure_mean = std::get<2>(results);
+        this->risk_T_preprocedure_mean = calc_risk_at_T(A, initial_states,  t_inf);
 
-        pre_procedure = calc_risk_at_T(A, initial_states,  t_inf) - initial_states(Eigen::last);
-        post_procedure = risk_T_mean - X_mean(Eigen::last, Eigen::last);
+        pre_procedure =  risk_T_preprocedure_mean - initial_states(Eigen::last);
+        post_procedure = risk_T_postprocedure_mean - X_mean(Eigen::last, Eigen::last);
     }
     else {
         this->X_mean = calc_X(time_passed, quarantine, A, initial_states);
         this->result_matrix_mean = assemble_phases(X_mean, sub_compartments);
-        this->risk_T_mean = calc_risk_at_T(A, initial_states,  t_inf);
+        this->risk_T_postprocedure_mean = calc_risk_at_T(A, initial_states,  t_inf);
+        this->risk_T_preprocedure_mean = risk_T_postprocedure_mean;
 
-        pre_procedure = risk_T_mean - X_mean(0, Eigen::last);
-        post_procedure = risk_T_mean - X_mean(Eigen::last, Eigen::last);
+        pre_procedure = risk_T_preprocedure_mean - X_mean(0, Eigen::last);
+        post_procedure = risk_T_postprocedure_mean - X_mean(Eigen::last, Eigen::last);
 
         std::vector<int> v(time_passed + quarantine + 1);
         std::iota(v.begin(), v.end(), -time_passed);
@@ -692,19 +694,21 @@ void Simulation::run()
         auto results = calculate_strategy_with_test(A);
         this->X_lev = std::get<0>(results);
         this->result_matrix_lev = assemble_phases(X_lev, sub_compartments);
-        this->risk_T_lev = std::get<2>(results);
+        this->risk_T_postprocedure_lev = std::get<2>(results);
+        this->risk_T_preprocedure_lev = calc_risk_at_T(A, initial_states,  t_inf);
 
-        pre_procedure = calc_risk_at_T(A, initial_states,  t_inf) - initial_states(Eigen::last);
-        post_procedure = risk_T_lev - X_lev(Eigen::last, Eigen::last);
+        pre_procedure = risk_T_preprocedure_lev - initial_states(Eigen::last);
+        post_procedure = risk_T_postprocedure_lev - X_lev(Eigen::last, Eigen::last);
 
     }
     else {
         this->X_lev = calc_X(time_passed, quarantine, A, initial_states);
         this->result_matrix_lev = assemble_phases(X_lev, sub_compartments);
-        this->risk_T_lev = calc_risk_at_T(A, initial_states,  t_inf);
+        this->risk_T_postprocedure_lev = calc_risk_at_T(A, initial_states,  t_inf);
+        this->risk_T_preprocedure_lev = risk_T_postprocedure_lev;
 
-        pre_procedure = risk_T_lev - X_lev(0, Eigen::last);
-        post_procedure = risk_T_lev - X_lev(Eigen::last, Eigen::last);
+        pre_procedure = risk_T_preprocedure_lev - X_lev(0, Eigen::last);
+        post_procedure = risk_T_postprocedure_lev - X_lev(Eigen::last, Eigen::last);
     }
     this->fold_RR_lev = pre_procedure / post_procedure;
 
@@ -718,18 +722,20 @@ void Simulation::run()
         auto results = calculate_strategy_with_test(A);
         this->X_uev = std::get<0>(results);
         this->result_matrix_uev = assemble_phases(X_uev, sub_compartments);
-        this->risk_T_uev = std::get<2>(results);
+        this->risk_T_postprocedure_uev = std::get<2>(results);
+        this->risk_T_preprocedure_uev = calc_risk_at_T(A, initial_states,  t_inf);
 
-        pre_procedure = calc_risk_at_T(A, initial_states,  t_inf) - initial_states(Eigen::last);
-        post_procedure = risk_T_uev - X_uev(Eigen::last, Eigen::last);
+        pre_procedure =  risk_T_preprocedure_uev - initial_states(Eigen::last);
+        post_procedure = risk_T_postprocedure_uev - X_uev(Eigen::last, Eigen::last);
     }
     else {
         this->X_uev = calc_X(time_passed, quarantine, A, initial_states);
         this->result_matrix_uev = assemble_phases(X_uev, sub_compartments);
-        this->risk_T_uev = calc_risk_at_T(A, initial_states,  t_inf);
+        this->risk_T_postprocedure_uev = calc_risk_at_T(A, initial_states,  t_inf);
+        this->risk_T_preprocedure_uev = risk_T_postprocedure_uev;
 
-        pre_procedure = risk_T_uev - X_uev(0, Eigen::last);
-        post_procedure = risk_T_uev - X_uev(Eigen::last, Eigen::last);
+        pre_procedure = risk_T_preprocedure_uev - X_uev(0, Eigen::last);
+        post_procedure = risk_T_postprocedure_uev - X_uev(Eigen::last, Eigen::last);
     }
     this->fold_RR_uev = pre_procedure / post_procedure;
 

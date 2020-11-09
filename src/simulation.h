@@ -64,7 +64,8 @@ protected:
     Eigen::MatrixXf assay_detectibility_best_case;
     Eigen::MatrixXf assay_detectibility_mean_case;
 
-    float risk_T_mean, risk_T_lev, risk_T_uev;
+    float risk_T_postprocedure_mean, risk_T_postprocedure_lev, risk_T_postprocedure_uev;
+    float risk_T_preprocedure_mean, risk_T_preprocedure_lev, risk_T_preprocedure_uev;
     float fold_RR_mean, fold_RR_lev, fold_RR_uev;
     std::vector<int> time_for_plot;
 
