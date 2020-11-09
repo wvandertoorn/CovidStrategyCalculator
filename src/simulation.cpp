@@ -404,7 +404,7 @@ QtCharts::QChartView* Simulation::create_plot(Eigen::MatrixXf mean,
 
 QTableWidget* Simulation::create_table()
 {
-    int n_time = result_matrix_mean.rows();
+    int n_time = assay_detectibility_mean_case.rows();
     int offset = time_passed;
 
     QStringList h_labels;
@@ -417,18 +417,18 @@ QTableWidget* Simulation::create_table()
     table->setHorizontalHeaderLabels(h_labels);
     table->setVerticalHeaderLabels((QStringList() << "Test efficacy"));
 
-    float start_mean = result_matrix_mean(0, Eigen::seq(0, Eigen::last-1)).sum();
-    float start_lev = result_matrix_lev(0, Eigen::seq(0, Eigen::last-1)).sum();
-    float start_uev = result_matrix_uev(0, Eigen::seq(0, Eigen::last-1)).sum();
+    float start_mean = assay_detectibility_mean_case(0, Eigen::seq(0, Eigen::last-1)).sum();
+    float start_lev = assay_detectibility_worst_case(0, Eigen::seq(0, Eigen::last-1)).sum();
+    float start_uev = assay_detectibility_best_case(0, Eigen::seq(0, Eigen::last-1)).sum();
 
     for (int i = 0; i< n_time; ++i)
     {
-        float perc_mean = ((1-specificity) * result_matrix_mean(i, 0) +
-                          (result_matrix_mean(i, Eigen::seq(1, 3)).sum() * sensitivity)) / start_mean * 100;
-        float perc_lev = ((1-specificity) * result_matrix_lev(i, 0) +
-                          (result_matrix_lev(i,  Eigen::seq(1, 3)).sum() * sensitivity)) / start_lev * 100;
-        float perc_uev = ((1-specificity) * result_matrix_uev(i, 0) +
-                          (result_matrix_uev(i, Eigen::seq(1, 3)).sum() * sensitivity)) / start_uev * 100;
+        float perc_mean = ((1-specificity) * assay_detectibility_mean_case(i, 0) +
+                          (assay_detectibility_mean_case(i, Eigen::seq(1, 3)).sum() * sensitivity)) / start_mean * 100;
+        float perc_lev = ((1-specificity) * assay_detectibility_worst_case(i, 0) +
+                          (assay_detectibility_worst_case(i,  Eigen::seq(1, 3)).sum() * sensitivity)) / start_lev * 100;
+        float perc_uev = ((1-specificity) * assay_detectibility_best_case(i, 0) +
+                          (assay_detectibility_best_case(i, Eigen::seq(1, 3)).sum() * sensitivity)) / start_uev * 100;
         table->setItem(0, i, new QTableWidgetItem(QString::number(perc_mean, 'f', 2) + "%"
                                                   + "  (" + QString::number(perc_uev, 'f', 2)
                                                   + ", " + QString::number(perc_lev, 'f', 2) + ")"));
