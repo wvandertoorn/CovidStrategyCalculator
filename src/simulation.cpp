@@ -408,6 +408,7 @@ QTableWidget* Simulation::create_table(Eigen::MatrixXf detectable,
                                        Eigen::MatrixXf uev,
                                        Eigen::MatrixXf lev)
 {
+    int n_time = detectable.rows();
     int offset = time_passed;
 
     QStringList h_labels;
@@ -418,25 +419,18 @@ QTableWidget* Simulation::create_table(Eigen::MatrixXf detectable,
 
     QTableWidget *table = new QTableWidget(1, n_time);
     table->setHorizontalHeaderLabels(h_labels);
-    table->setVerticalHeaderLabels((QStringList() << "Test efficacy"));
-
-    float start_mean = assay_detectibility_mean_case(0, Eigen::seq(0, Eigen::last-1)).sum();
-    float start_lev = assay_detectibility_worst_case(0, Eigen::seq(0, Eigen::last-1)).sum();
-    float start_uev = assay_detectibility_best_case(0, Eigen::seq(0, Eigen::last-1)).sum();
+    table->setVerticalHeaderLabels((QStringList() << "Assay sensitivity [%]" << "Relative residual risk [%]"));
 
     for (int i = 0; i< n_time; ++i)
     {
-        float perc_mean = ((1-specificity) * assay_detectibility_mean_case(i, 0) +
-                          (assay_detectibility_mean_case(i, Eigen::seq(1, 3)).sum() * sensitivity)) / start_mean * 100;
-        float perc_lev = ((1-specificity) * assay_detectibility_worst_case(i, 0) +
-                          (assay_detectibility_worst_case(i,  Eigen::seq(1, 3)).sum() * sensitivity)) / start_lev * 100;
-        float perc_uev = ((1-specificity) * assay_detectibility_best_case(i, 0) +
-                          (assay_detectibility_best_case(i, Eigen::seq(1, 3)).sum() * sensitivity)) / start_uev * 100;
-        table->setItem(0, i, new QTableWidgetItem(QString::number(perc_mean, 'f', 2) + "%"
-                                                  + "  (" + QString::number(perc_uev, 'f', 2)
-                                                  + ", " + QString::number(perc_lev, 'f', 2) + ")"));
+        table->setItem(0, i, new QTableWidgetItem("("+ QString::number(detectable(i, 0), 'f', 2)
+                                                  + ", " + QString::number(detectable(i, 1), 'f', 2) + ")"));
+        // table->setItem(1, i, new QTableWidgetItem(QString::number(mean(i, 0), 'f', 2) +
+        //                                           + "  (" + QString::number(lev(i, 0), 'f', 2)
+        //                                           + ", " + QString::number(uev(i, 0), 'f', 2) + ")"));
 
-        table->item(0,i)->setFlags(table->item(0,i)->flags() &  ~Qt::ItemIsEditable);
+        table->item(0, i)->setFlags(table->item(0, i)->flags() &  ~Qt::ItemIsEditable);
+        // table->item(1, i)->setFlags(table->item(1, i)->flags() &  ~Qt::ItemIsEditable);
     }
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
@@ -603,7 +597,7 @@ void Simulation::output_results()
 
     QtCharts::QChartView* plot = create_plot(detectable, mean, uev, lev, time_for_plot);
 
-    QTableWidget* table = create_table();
+    QTableWidget* table = create_table(detectable, mean, uev, lev);
 
     QVBoxLayout *layout = new QVBoxLayout();
     layout->setContentsMargins( 0, 0, 0, 0 );

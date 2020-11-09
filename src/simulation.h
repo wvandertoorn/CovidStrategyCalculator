@@ -95,7 +95,10 @@ protected:
                                       Eigen::MatrixXf uev,
                                       Eigen::MatrixXf lev,
                                       std::vector<int> time_range_for_plot);
-    QTableWidget* create_table();
+    QTableWidget* create_table(Eigen::MatrixXf detectable,
+                               Eigen::MatrixXf mean,
+                               Eigen::MatrixXf uev,
+                               Eigen::MatrixXf lev);
 
     void create_result_log();
     void write_row_result_log(QTableWidget*);
