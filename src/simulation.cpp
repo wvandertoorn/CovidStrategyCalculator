@@ -309,7 +309,6 @@ Eigen::MatrixXf Simulation::assemble_phases(Eigen::MatrixXf X,
     return assembled;
 }
 
-QtCharts::QChartView* Simulation::create_plot()
 Eigen::MatrixXf Simulation::risk_node_to_relative_residual_risk(Eigen::MatrixXf risk, float risk_T){
 
     Eigen::MatrixXf risk_T_vector(risk.rows(), 1);
@@ -320,25 +319,27 @@ Eigen::MatrixXf Simulation::risk_node_to_relative_residual_risk(Eigen::MatrixXf 
     risk.array() = (risk.array() / risk(0,0)).array() * 100.;
     return risk;
 }
+
+
+QtCharts::QChartView* Simulation::create_plot(Eigen::MatrixXf mean,
+                                              Eigen::MatrixXf uev,
+                                              Eigen::MatrixXf lev,
+                                              std::vector<int> time_range_for_plot
+                                        )
 {
-    int n_time = result_matrix_mean.rows();
+    int n_time = mean.rows();
     QtCharts::QChart *chart = new QtCharts::QChart();
 
     QtCharts::QLineSeries *risk_low = new QtCharts::QLineSeries;
     QtCharts::QLineSeries *risk_mean = new QtCharts::QLineSeries;
     QtCharts::QLineSeries *risk_high = new QtCharts::QLineSeries;
-    risk_mean->setName("Is- or will become infectious");
+    risk_mean->setName("Residual risk");
 
     for (int j=0; j<n_time; ++j)
     {
-        float m = result_matrix_mean(j, Eigen::seq(0,2)).sum();
-        float lev = result_matrix_lev(j, Eigen::seq(0,2)).sum();
-        float uev = result_matrix_uev(j, Eigen::seq(0,2)).sum();
-
-        risk_low->append(j-time_passed, lev);
-        risk_mean->append(j-time_passed, m);
-        risk_high->append(j-time_passed, uev);
-
+        risk_low->append(time_range_for_plot[j], lev(j, 0));
+        risk_mean->append(time_range_for_plot[j], mean(j, 0));
+        risk_high->append(time_range_for_plot[j], uev(j, 0));
     }
     QtCharts::QAreaSeries *risk_area = new QtCharts::QAreaSeries(risk_low, risk_high);
 
@@ -366,7 +367,6 @@ Eigen::MatrixXf Simulation::risk_node_to_relative_residual_risk(Eigen::MatrixXf 
         detect_high->append(j-time_passed, detectable(j,1));
     }
     QtCharts::QAreaSeries *detect_area = new QtCharts::QAreaSeries(detect_low, detect_high);
-    detect_area->setName("Infected and detectable");
 
     QColor detect_color(140, 129, 152, 128);
     QPen detect_pen(detect_color);
@@ -377,11 +377,21 @@ Eigen::MatrixXf Simulation::risk_node_to_relative_residual_risk(Eigen::MatrixXf 
     chart->addSeries(detect_area);
 
     chart->createDefaultAxes();
-    chart->axes(Qt::Horizontal).first()->setTitleText("Day");
-    chart->axes(Qt::Vertical).first()->setTitleText("Probability");
+    switch (this->mode) {
+        case 0: chart->axes(Qt::Horizontal).first()->setTitleText("Days since infection");
+                break;
+        case 1: chart->axes(Qt::Horizontal).first()->setTitleText("Days since symptom onset");
+                break;
+        case 2: chart->axes(Qt::Horizontal).first()->setTitleText("Days since exposure");
+                break;
+    }
+    chart->axes(Qt::Vertical).first()->setTitleText("%");
 
     QtCharts::QValueAxis *axisX = qobject_cast<QtCharts::QValueAxis*>(chart->axes(Qt::Horizontal).first());
-    axisX->setTickCount(n_time);
+    axisX->setTickCount(time_passed + quarantine  + 1);
+
+    QtCharts::QValueAxis *axisY = qobject_cast<QtCharts::QValueAxis*>(chart->axes(Qt::Vertical).first());
+    axisY->setRange(0, 100);
 
     chart->legend()->show();
     QFont f("Helvetica", 10);
@@ -580,7 +590,12 @@ Eigen::MatrixXf Simulation::calculate_assay_sensitivity()
 
 void Simulation::output_results()
 {
-    QtCharts::QChartView* plot = create_plot();
+    Eigen::MatrixXf mean = risk_node_to_relative_residual_risk( X_mean(Eigen::all, Eigen::last), risk_T_mean);
+    Eigen::MatrixXf uev = risk_node_to_relative_residual_risk( X_uev(Eigen::all, Eigen::last), risk_T_uev);
+    Eigen::MatrixXf lev = risk_node_to_relative_residual_risk( X_lev(Eigen::all, Eigen::last), risk_T_lev);
+
+    QtCharts::QChartView* plot = create_plot(mean, uev, lev, time_for_plot);
+
     QTableWidget* table = create_table();
 
     QVBoxLayout *layout = new QVBoxLayout();
