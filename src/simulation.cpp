@@ -587,10 +587,8 @@ Eigen::MatrixXf Simulation::calculate_assay_sensitivity()
         detectibility(j, 1) =  v[maxElementIndex];
     }
 
-    // float infected_population = initial_states(Eigen::seq(0, Eigen::last - 1)).sum();
-    // return detectibility.array() / infected_population;
-
-    return detectibility;
+    float infected_population = initial_states(Eigen::seq(0, Eigen::last - 1)).sum();
+    return detectibility.array() / infected_population * 100.;
 }
 
 void Simulation::output_results()
