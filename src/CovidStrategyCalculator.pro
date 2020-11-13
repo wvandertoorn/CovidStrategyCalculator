@@ -16,5 +16,7 @@ HEADERS += \
         mainwindow.h \
         simulation.h
 
+RESOURCES     = CovidStrategyCalculator.qrc
+
 VERSION  = 1.0
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

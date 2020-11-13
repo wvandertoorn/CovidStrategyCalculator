@@ -31,10 +31,11 @@ protected:
     QComboBox *mode_ComboBox;
     int mode{0};
 
+    QDoubleSpinBox *pre_risk;
     QDoubleSpinBox *time_passed;
     QDoubleSpinBox *quarantine;
 
-    QCheckBox *use_symptomatic_screening;    
+    QCheckBox *use_symptomatic_screening;
 
     std::vector<QCheckBox*> test_date_checkboxes{};
     std::vector<bool> test_date_checkboxes_states{};
@@ -56,7 +57,7 @@ protected:
                                                 { "post_mean", 7 },
                                                 // { "post_uev", 6.25 },
                                                 { "pcr_sens", 80 },
-                                                { "pcr_spec", 99.5 },
+                                                { "pcr_spec", 99.99 },
                                                 { "relative_antigen_sens", 85},
                                                 { "week4", 50. },
                                                 { "week3", 50. },

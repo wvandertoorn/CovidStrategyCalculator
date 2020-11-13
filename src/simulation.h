@@ -64,8 +64,10 @@ protected:
     Eigen::MatrixXf assay_detectibility_best_case;
     Eigen::MatrixXf assay_detectibility_mean_case;
 
-    float risk_T_postprocedure_mean, risk_T_postprocedure_lev, risk_T_postprocedure_uev;
-    float risk_T_preprocedure_mean, risk_T_preprocedure_lev, risk_T_preprocedure_uev;
+    Eigen::MatrixXf risk_reduction_trajectory_worst_case;
+    Eigen::MatrixXf risk_reduction_trajectory_best_case;
+    Eigen::MatrixXf risk_reduction_trajectory_mean_case;
+
     float fold_RR_mean, fold_RR_lev, fold_RR_uev;
     std::vector<int> time_for_plot;
 
@@ -83,22 +85,28 @@ protected:
                            int qrntn,
                            Eigen::MatrixXf A_,
                            Eigen::VectorXf states);
-    float calc_risk_at_T(Eigen::MatrixXf A,
-                        Eigen::VectorXf states,
-                        float time_T);
+    float calc_risk_at_T(float time_T,
+                         Eigen::VectorXf X0,
+                         Eigen::MatrixXf A);
     Eigen::MatrixXf assemble_phases(Eigen::MatrixXf X_,
                                     std::vector<int> comp);
 
-    Eigen::MatrixXf risk_node_to_relative_residual_risk(Eigen::MatrixXf risk, float risk_T);
+    Eigen::MatrixXf states_matrix_to_risk_trajectory(Eigen::MatrixXf X,
+                                                               Eigen::MatrixXf A,
+                                                               std::vector<int> days);
+    std::tuple<Eigen::MatrixXf,
+               Eigen::MatrixXf,
+               Eigen::MatrixXf> scale_risk_trajectories(Eigen::MatrixXf risk_node_mean_case,
+                                                        Eigen::MatrixXf risk_node_best_case,
+                                                        Eigen::MatrixXf risk_node_worst_case);
+    void reorder_risk_trajectories();
+
     QtCharts::QChartView* create_plot(Eigen::MatrixXf detectable,
                                       Eigen::MatrixXf mean,
-                                      Eigen::MatrixXf uev,
-                                      Eigen::MatrixXf lev,
+                                      Eigen::MatrixXf best_case,
+                                      Eigen::MatrixXf worst_case,
                                       std::vector<int> time_range_for_plot);
-    QTableWidget* create_table(Eigen::MatrixXf detectable,
-                               Eigen::MatrixXf mean,
-                               Eigen::MatrixXf uev,
-                               Eigen::MatrixXf lev);
+    QTableWidget* create_efficacy_table();
 
     void create_result_log();
     void write_row_result_log(QTableWidget*);
@@ -106,6 +114,7 @@ protected:
 
     float calculate_strategy_result(Eigen::MatrixXf matrix);
     Eigen::MatrixXf calculate_assay_sensitivity();
+    Eigen::MatrixXf calculate_test_efficay();
 
     std::tuple<Eigen::MatrixXf, std::vector<int>, float> calculate_strategy_with_test(Eigen::MatrixXf A);
 signals:
