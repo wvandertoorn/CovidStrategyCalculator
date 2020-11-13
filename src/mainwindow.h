@@ -34,6 +34,7 @@ protected:
     QDoubleSpinBox *pre_risk;
     QDoubleSpinBox *time_passed;
     QDoubleSpinBox *quarantine;
+    QDoubleSpinBox *adherence;
 
     QCheckBox *use_symptomatic_screening;
 

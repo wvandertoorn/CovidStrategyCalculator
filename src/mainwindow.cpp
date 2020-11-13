@@ -103,6 +103,8 @@ QWidget *MainWindow::initialize_tab_strategy()
     this->test_days_box = new QGroupBox(this);
     this->test_days_box->setTitle(tr("Days to test on:"));
 
+    this->adherence = create_parameter_DoubleSpinBox(this, 0, 100, 0, 100);
+
     this->run_PushButton = new QPushButton(this);
     run_PushButton->setText(tr("Run"));
     run_PushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -129,6 +131,8 @@ QWidget *MainWindow::initialize_tab_strategy()
     gridLayout->addWidget(quarantine, 3, 1, Qt::AlignLeft);
     gridLayout->addWidget(new QLabel(tr("Symptomatic screening")), 4, 0);
     gridLayout->addWidget(use_symptomatic_screening, 4, 1, Qt::AlignLeft);
+    gridLayout->addWidget(new QLabel(tr("Expected adherence [%]:")), 5, 0);
+    gridLayout->addWidget(adherence, 5, 1, Qt::AlignLeft);
     gridLayout->setHorizontalSpacing(10);
     gridLayout->setSizeConstraint(QLayout::SetFixedSize);
 

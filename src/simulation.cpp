@@ -112,6 +112,7 @@ void Simulation::collect_data(MainWindow *parent)
     time_passed = parent->time_passed->value();
     quarantine = parent->quarantine->value();
     use_symptomatic_screening = parent->use_symptomatic_screening->isChecked();
+    adherence = parent->adherence->value() / 100.;
 
     // parameters
     if (use_symptomatic_screening){
@@ -466,12 +467,13 @@ void Simulation::create_result_log()
 {
     QLabel *label = new QLabel(tr("Result log"));
 
-    QTableWidget *table = new QTableWidget(1, 10);
+    QTableWidget *table = new QTableWidget(1, 11);
     table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     table->setHorizontalHeaderLabels((QStringList() << "mode"
                                                     << "sympt screening\n(perc asympt)"
+                                                    << "adherence\n[%]"
                                                     << "time passed\n[days]"
-                                                    << "quarantine/isolation\n[days]"
+                                                    << "quarantine/\nisolation\n[days]"
                                                     << "test\n[days]"
                                                     << "test type"
                                                     << "initial risk\n[%]"
@@ -508,8 +510,9 @@ void Simulation::write_row_result_log(QTableWidget *table)
                                                  + "%)"));
     } else {table->setItem(0, 1, new QTableWidgetItem(boolText));}
 
-    table->setItem(0, 2, new QTableWidgetItem(QString::number(this->time_passed)));
-    table->setItem(0, 3, new QTableWidgetItem(QString::number(this->quarantine)));
+    table->setItem(0, 2, new QTableWidgetItem(QString::number(this->adherence * 100.)));
+    table->setItem(0, 3, new QTableWidgetItem(QString::number(this->time_passed)));
+    table->setItem(0, 4, new QTableWidgetItem(QString::number(this->quarantine)));
 
     if (this->t_test.size())
     {
@@ -519,21 +522,21 @@ void Simulation::write_row_result_log(QTableWidget *table)
             days += (QString::number(day - this->time_passed) + ", ");
         }
         days.chop(2);
-        table->setItem(0, 4, new QTableWidgetItem(days));
+        table->setItem(0, 5, new QTableWidgetItem(days));
 
-        table->setItem(0, 5, new QTableWidgetItem(this->test_type));
+        table->setItem(0, 6, new QTableWidgetItem(this->test_type));
     }
     else
     {
-      table->setItem(0, 4, new QTableWidgetItem());
       table->setItem(0, 5, new QTableWidgetItem());
+      table->setItem(0, 6, new QTableWidgetItem());
     }
 
-    table->setItem(0, 6, new QTableWidgetItem(QString::number(pre_test_infect_prob *100, 'f', 2)));
+    table->setItem(0, 7, new QTableWidgetItem(QString::number(pre_test_infect_prob *100, 'f', 2)));
 
-    table->setItem(0, 7, new QTableWidgetItem(QString::number((1./this->fold_RR_mean)*pre_test_infect_prob*100.,
+    table->setItem(0, 8, new QTableWidgetItem(QString::number((1./this->fold_RR_mean)*pre_test_infect_prob*100.,
                                                              'f', 2)
-                                             + "\n("
+                                             + "\n ("
                                              + QString::number((1./this->fold_RR_uev)*pre_test_infect_prob*100.,
                                                                'f', 2)
                                              + ", "
@@ -541,9 +544,9 @@ void Simulation::write_row_result_log(QTableWidget *table)
                                                                'f', 2)
                                              + ")" ));
 
-    table->setItem(0, 8, new QTableWidgetItem(QString::number((1 - 1./this->fold_RR_mean)*100.,
+    table->setItem(0, 9, new QTableWidgetItem(QString::number((1 - 1./this->fold_RR_mean)*100.,
                                                              'f', 2)
-                                             + "\n("
+                                             + "\n ("
                                              + QString::number((1 - 1./this->fold_RR_uev)*100.,
                                                                'f', 2)
                                              + ", "
@@ -551,17 +554,17 @@ void Simulation::write_row_result_log(QTableWidget *table)
                                                                'f', 2)
                                              + ")" ));
 
-    table->setItem(0, 9, new QTableWidgetItem(QString::number(this->fold_RR_mean,
+    table->setItem(0, 10, new QTableWidgetItem(QString::number(this->fold_RR_mean,
                                                               'f', 2)
-                                              + "\n("
+                                              + "\n ("
                                               + QString::number(this->fold_RR_uev,
                                                                 'f', 2)
                                               + ", "
                                               + QString::number(this->fold_RR_lev,
                                                                 'f', 2)
                                               + ")" ));
-
-    for (int i = 0; i < 10; ++i)
+    
+    for (int i = 0; i < 11; ++i)
     {
         table->item(0,i)->setFlags(table->item(0,i)->flags() &  ~Qt::ItemIsEditable);
     }
@@ -806,10 +809,15 @@ void Simulation::run()
     this->assay_detectibility_best_case = assemble_phases(X, sub_compartments);
 
     reorder_risk_trajectories();
-    this->fold_RR_mean = this->risk_reduction_trajectory_mean_case(0, 0) / this->risk_reduction_trajectory_mean_case(Eigen::last, 0);
-    this->fold_RR_lev = this->risk_reduction_trajectory_worst_case(0, 0) / this->risk_reduction_trajectory_worst_case(Eigen::last, 0);
-    this->fold_RR_uev = this->risk_reduction_trajectory_best_case(0, 0) / this->risk_reduction_trajectory_best_case(Eigen::last, 0);
-
+    this->fold_RR_mean = this->risk_reduction_trajectory_mean_case(0, 0)
+                         / ( adherence * this->risk_reduction_trajectory_mean_case(Eigen::last, 0)
+                            +  (1. - adherence) * this->risk_reduction_trajectory_mean_case(0, 0) );
+    this->fold_RR_lev = this->risk_reduction_trajectory_worst_case(0, 0)
+                        / ( adherence * this->risk_reduction_trajectory_worst_case(Eigen::last, 0)
+                           +  (1. - adherence) * this->risk_reduction_trajectory_worst_case(0, 0) );
+    this->fold_RR_uev = this->risk_reduction_trajectory_best_case(0, 0)
+                        / ( adherence * this->risk_reduction_trajectory_best_case(Eigen::last, 0)
+                           + (1. - adherence) * this->risk_reduction_trajectory_best_case(0, 0) );
 }
 
 std::tuple<Eigen::MatrixXf, std::vector<int>, float> Simulation::calculate_strategy_with_test(Eigen::MatrixXf A){

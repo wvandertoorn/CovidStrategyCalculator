@@ -39,6 +39,7 @@ protected:
     int time_passed;
     int quarantine;
     bool use_symptomatic_screening;
+    float adherence;
     std::vector<int> t_test{};
     QString test_type;
 
