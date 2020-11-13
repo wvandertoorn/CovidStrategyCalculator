@@ -114,6 +114,7 @@ protected:
     void create_result_log();
     void write_row_result_log(QTableWidget*);
     void update_result_log();
+    std::tuple<float, float, float> mid_min_max(float value1, float value2, float value3);
 
     float calculate_strategy_result(Eigen::MatrixXf matrix);
     Eigen::MatrixXf calculate_assay_sensitivity();

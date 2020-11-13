@@ -534,32 +534,43 @@ void Simulation::write_row_result_log(QTableWidget *table)
 
     table->setItem(0, 7, new QTableWidgetItem(QString::number(pre_test_infect_prob *100, 'f', 2)));
 
+    std::tuple<float, float, float> tmp;
+
+    tmp = mid_min_max((1./this->fold_RR_mean)*pre_test_infect_prob*100.,
+                      (1./this->fold_RR_uev)*pre_test_infect_prob*100.,
+                      (1./this->fold_RR_lev)*pre_test_infect_prob*100.);
     table->setItem(0, 8, new QTableWidgetItem(
-                                            safeguard_probability((1./this->fold_RR_mean)*pre_test_infect_prob*100.,
-                                                             2, 100)
-                                             + "\n ("
-                                             + safeguard_probability((1./this->fold_RR_lev)*pre_test_infect_prob*100.,
+                                            safeguard_probability(std::get<0>(tmp),
+                                             2, 100)
+                                             + " ("
+                                             + safeguard_probability(std::get<1>(tmp),
                                              2, 100)
                                              + ", "
-                                             + safeguard_probability((1./this->fold_RR_uev)*pre_test_infect_prob*100.,
-                                                               2, 100)
+                                             + safeguard_probability(std::get<2>(tmp),
+                                             2, 100)
                                              + ")" ));
 
-    table->setItem(0, 9, new QTableWidgetItem(safeguard_probability((1 - 1./this->fold_RR_mean)*100.,
+    tmp = mid_min_max((1 - 1./this->fold_RR_mean)*100.,
+                      (1 - 1./this->fold_RR_uev)*100.,
+                      (1 - 1./this->fold_RR_lev)*100.);
+    table->setItem(0, 9, new QTableWidgetItem(safeguard_probability(std::get<0>(tmp),
                                                              2, 100)
-                                             + "\n ("
-                                             + safeguard_probability((1 - 1./this->fold_RR_uev)*100.,
+                                             + " ("
+                                             + safeguard_probability(std::get<1>(tmp),
                                                                 2, 100)
                                              + ", "
-                                             + safeguard_probability((1 - 1./this->fold_RR_lev)*100.,
+                                             + safeguard_probability(std::get<2>(tmp),
                                                                 2, 100)
                                              + ")" ));
 
-    table->setItem(0, 10, new QTableWidgetItem(safeguard_inf(this->fold_RR_mean, 2)
-                                              + "\n ("
-                                              + safeguard_inf(this->fold_RR_uev, 2)
+    tmp = mid_min_max(this->fold_RR_mean,
+                      this->fold_RR_uev,
+                      this->fold_RR_lev);
+    table->setItem(0, 10, new QTableWidgetItem(safeguard_inf(std::get<0>(tmp), 2)
+                                              + " ("
+                                              + safeguard_inf(std::get<1>(tmp), 2)
                                               + ", "
-                                              + safeguard_inf(this->fold_RR_lev, 2)
+                                              + safeguard_inf(std::get<2>(tmp), 2)
                                               + ")" ));
 
     for (int i = 0; i < 11; ++i)
@@ -655,6 +666,20 @@ Eigen::MatrixXf Simulation::calculate_test_efficay()
     }
 
     return efficacy;
+}
+
+std::tuple<float, float, float> Simulation::mid_min_max(float value1, float value2, float value3)
+{
+    std::vector<float> v{value1, value2, value3};
+
+    int maxElementIndex = std::max_element(v.begin(), v.end()) - v.begin();
+    int minElementIndex = std::min_element(v.begin(), v.end()) - v.begin();
+    int midElementIndex = 3 - maxElementIndex - minElementIndex;
+    if (maxElementIndex == minElementIndex){
+        midElementIndex = 0;
+    }
+
+    return std::make_tuple(v[midElementIndex], v[minElementIndex], v[maxElementIndex]);
 }
 
 void Simulation::reorder_risk_trajectories()
