@@ -18,5 +18,7 @@ HEADERS += \
 
 RESOURCES     = CovidStrategyCalculator.qrc
 
+QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.13
+
 VERSION  = 1.0
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
