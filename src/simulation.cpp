@@ -537,10 +537,10 @@ void Simulation::write_row_result_log(QTableWidget *table)
     table->setItem(0, 8, new QTableWidgetItem(QString::number((1./this->fold_RR_mean)*pre_test_infect_prob*100.,
                                                              'f', 2)
                                              + "\n ("
-                                             + QString::number((1./this->fold_RR_uev)*pre_test_infect_prob*100.,
-                                                               'f', 2)
-                                             + ", "
                                              + QString::number((1./this->fold_RR_lev)*pre_test_infect_prob*100.,
+                                             'f', 2)
+                                             + ", "
+                                             + QString::number((1./this->fold_RR_uev)*pre_test_infect_prob*100.,
                                                                'f', 2)
                                              + ")" ));
 
