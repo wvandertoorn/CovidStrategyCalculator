@@ -466,7 +466,7 @@ void Simulation::create_result_log()
 {
     QLabel *label = new QLabel(tr("Result log"));
 
-    QTableWidget *table = new QTableWidget(1, 9);
+    QTableWidget *table = new QTableWidget(1, 10);
     table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     table->setHorizontalHeaderLabels((QStringList() << "mode"
                                                     << "sympt screening\n(perc asympt)"
@@ -475,6 +475,7 @@ void Simulation::create_result_log()
                                                     << "test\n[days]"
                                                     << "test type"
                                                     << "initial risk\n[%]"
+                                                    << "final risk\n[%]"
                                                     << "risk reduction\n[%]"
                                                     << "fold risk\nreduction"));
 
@@ -530,7 +531,17 @@ void Simulation::write_row_result_log(QTableWidget *table)
 
     table->setItem(0, 6, new QTableWidgetItem(QString::number(pre_test_infect_prob *100, 'f', 2)));
 
-    table->setItem(0, 7, new QTableWidgetItem(QString::number((1 - 1./this->fold_RR_mean)*100.,
+    table->setItem(0, 7, new QTableWidgetItem(QString::number((1./this->fold_RR_mean)*pre_test_infect_prob*100.,
+                                                             'f', 2)
+                                             + "\n("
+                                             + QString::number((1./this->fold_RR_uev)*pre_test_infect_prob*100.,
+                                                               'f', 2)
+                                             + ", "
+                                             + QString::number((1./this->fold_RR_lev)*pre_test_infect_prob*100.,
+                                                               'f', 2)
+                                             + ")" ));
+
+    table->setItem(0, 8, new QTableWidgetItem(QString::number((1 - 1./this->fold_RR_mean)*100.,
                                                              'f', 2)
                                              + "\n("
                                              + QString::number((1 - 1./this->fold_RR_uev)*100.,
@@ -540,7 +551,7 @@ void Simulation::write_row_result_log(QTableWidget *table)
                                                                'f', 2)
                                              + ")" ));
 
-    table->setItem(0, 8, new QTableWidgetItem(QString::number(this->fold_RR_mean,
+    table->setItem(0, 9, new QTableWidgetItem(QString::number(this->fold_RR_mean,
                                                               'f', 2)
                                               + "\n("
                                               + QString::number(this->fold_RR_uev,
@@ -550,7 +561,7 @@ void Simulation::write_row_result_log(QTableWidget *table)
                                                                 'f', 2)
                                               + ")" ));
 
-    for (int i = 0; i < 9; ++i)
+    for (int i = 0; i < 10; ++i)
     {
         table->item(0,i)->setFlags(table->item(0,i)->flags() &  ~Qt::ItemIsEditable);
     }
