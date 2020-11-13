@@ -102,6 +102,8 @@ protected:
                                                         Eigen::MatrixXf risk_node_worst_case);
     void reorder_risk_trajectories();
 
+    QString safeguard_inf(float value, int precision);
+    QString safeguard_probability(float probability, int precision, int max);
     QtCharts::QChartView* create_plot(Eigen::MatrixXf detectable,
                                       Eigen::MatrixXf mean,
                                       Eigen::MatrixXf best_case,

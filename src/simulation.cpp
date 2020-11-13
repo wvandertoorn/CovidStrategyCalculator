@@ -451,9 +451,9 @@ QTableWidget* Simulation::create_efficacy_table()
     {
         // table->setItem(0, i, new QTableWidgetItem("("+ QString::number(efficacy(i, 0), 'f', 2)
         //                                           + ", " + QString::number(detectable(i, 1), 'f', 2) + ")"));
-        table->setItem(0, i, new QTableWidgetItem(QString::number(efficacy(i, 0), 'f', 3) +
-                                                  + "  (" + QString::number(efficacy(i, 1), 'f', 3)
-                                                  + ", " + QString::number(efficacy(i, 2), 'f', 3) + ")"));
+        table->setItem(0, i, new QTableWidgetItem(safeguard_probability(efficacy(i, 0),  3, 1) +
+                                                  + "  (" + safeguard_probability(efficacy(i, 1),  3, 1)
+                                                  + ", " + safeguard_probability(efficacy(i, 2),  3, 1) + ")"));
 
         table->item(0, i)->setFlags(table->item(0, i)->flags() &  ~Qt::ItemIsEditable);
         // table->item(1, i)->setFlags(table->item(1, i)->flags() &  ~Qt::ItemIsEditable);
@@ -534,36 +534,34 @@ void Simulation::write_row_result_log(QTableWidget *table)
 
     table->setItem(0, 7, new QTableWidgetItem(QString::number(pre_test_infect_prob *100, 'f', 2)));
 
-    table->setItem(0, 8, new QTableWidgetItem(QString::number((1./this->fold_RR_mean)*pre_test_infect_prob*100.,
-                                                             'f', 2)
+    table->setItem(0, 8, new QTableWidgetItem(
+                                            safeguard_probability((1./this->fold_RR_mean)*pre_test_infect_prob*100.,
+                                                             2, 100)
                                              + "\n ("
-                                             + QString::number((1./this->fold_RR_lev)*pre_test_infect_prob*100.,
-                                             'f', 2)
+                                             + safeguard_probability((1./this->fold_RR_lev)*pre_test_infect_prob*100.,
+                                             2, 100)
                                              + ", "
-                                             + QString::number((1./this->fold_RR_uev)*pre_test_infect_prob*100.,
-                                                               'f', 2)
+                                             + safeguard_probability((1./this->fold_RR_uev)*pre_test_infect_prob*100.,
+                                                               2, 100)
                                              + ")" ));
 
-    table->setItem(0, 9, new QTableWidgetItem(QString::number((1 - 1./this->fold_RR_mean)*100.,
-                                                             'f', 2)
+    table->setItem(0, 9, new QTableWidgetItem(safeguard_probability((1 - 1./this->fold_RR_mean)*100.,
+                                                             2, 100)
                                              + "\n ("
-                                             + QString::number((1 - 1./this->fold_RR_uev)*100.,
-                                                               'f', 2)
+                                             + safeguard_probability((1 - 1./this->fold_RR_uev)*100.,
+                                                                2, 100)
                                              + ", "
-                                             + QString::number((1 - 1./this->fold_RR_lev)*100.,
-                                                               'f', 2)
+                                             + safeguard_probability((1 - 1./this->fold_RR_lev)*100.,
+                                                                2, 100)
                                              + ")" ));
 
-    table->setItem(0, 10, new QTableWidgetItem(QString::number(this->fold_RR_mean,
-                                                              'f', 2)
+    table->setItem(0, 10, new QTableWidgetItem(safeguard_inf(this->fold_RR_mean, 2)
                                               + "\n ("
-                                              + QString::number(this->fold_RR_uev,
-                                                                'f', 2)
+                                              + safeguard_inf(this->fold_RR_uev, 2)
                                               + ", "
-                                              + QString::number(this->fold_RR_lev,
-                                                                'f', 2)
+                                              + safeguard_inf(this->fold_RR_lev, 2)
                                               + ")" ));
-    
+
     for (int i = 0; i < 11; ++i)
     {
         table->item(0,i)->setFlags(table->item(0,i)->flags() &  ~Qt::ItemIsEditable);
@@ -732,6 +730,113 @@ void Simulation::output_results()
         update_result_log();
     }
 
+}
+
+QString Simulation::safeguard_inf(float value, int precision)
+{
+    QString rounded = QString::number(value, 'f', precision);
+
+    if (rounded == QString(tr("inf")))
+    {
+        return QString(tr(">1e12"));
+    }
+    return rounded;
+}
+QString Simulation::safeguard_probability(float probability, int precision, int max)
+{
+    QString rounded = QString::number(probability, 'f', precision);
+
+    switch (max) {
+        case 1:     switch (precision) {
+                        case 1: {
+                QString zero = QString(tr("0.0"));
+                QString one = QString(tr("1.0"));
+
+                if (rounded == zero){
+                    return QString(tr("<0.1"));
+                }
+                else if (rounded == one) {
+                    return QString(tr(">0.9"));
+                }
+                else {
+                    return rounded;
+                }
+            }
+                        case 2: {
+                QString zero = QString(tr("0.00"));
+                QString one = QString(tr("1.00"));
+
+                if (rounded == zero){
+                    return QString(tr("<0.01"));
+                }
+                else if (rounded == one) {
+                    return QString(tr(">0.99"));
+                }
+                else {
+                    return rounded;
+                }
+            }
+                        case 3: {
+                QString zero = QString(tr("0.000"));
+                QString one = QString(tr("1.000"));
+
+                if (rounded == zero){
+                    return QString(tr("<0.001"));
+                }
+                else if (rounded == one) {
+                    return QString(tr(">0.999"));
+                }
+                else {
+                    return rounded;
+                }
+            }
+                    }
+        case 100:   switch (precision) {
+                            case 1: {
+                                        QString zero = QString(tr("0.0"));
+                                        QString one = QString(tr("100.0"));
+
+                                        if (rounded == zero){
+                                            return QString(tr("<0.1"));
+                                        }
+                                        else if (rounded == one) {
+                                            return QString(tr(">99.9"));
+                                        }
+                                        else {
+                                            return rounded;
+                                        }
+                                    }
+                            case 2: {
+                                        QString zero = QString(tr("0.00"));
+                                        QString one = QString(tr("100.00"));
+
+                                        if (rounded == zero){
+                                            return QString(tr("<0.01"));
+                                        }
+                                        else if (rounded == one) {
+                                            return QString(tr(">99.99"));
+                                        }
+                                        else {
+                                            return rounded;
+                                        }
+                                    }
+                            case 3: {
+                                        QString zero = QString(tr("0.000"));
+                                        QString one = QString(tr("100.000"));
+
+                                        if (rounded == zero){
+                                            return QString(tr("<0.001"));
+                                        }
+                                        else if (rounded == one) {
+                                            return QString(tr(">99.999"));
+                                        }
+                                        else {
+                                            return rounded;
+                                        }
+                                    }
+                    }
+        default:    return rounded;
+    }
 }
 
 void Simulation::run()
