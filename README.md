@@ -1,59 +1,29 @@
 # CovidStrategyCalculator
 A standalone GUI to assess SARS-CoV2 testing- and  quarantine  strategies for incoming travelers, contact person management and de-isolation.
 
-The CovidStrategyCalculator (CSC) calculates the residual risk (probability of being infectious upon release from quarantine or isolation), risk reduction and test efficacy for arbitrary testing and  quarantine strategies. The user determines whether the time of exposure/infection (or symptom onset) is known, the intended duration of isolation/quarantine and the time points for SARS-CoV2 PCR tests. Underneath, we implemented the analytical solution of a stochastic transit compartment model of the infection time course that captures published temporal changes and variability in test sensitivities, incubation- and infectious periods, as well as times to symptom onset. The infection time course is modeled using five compartments: a predetection phase (not infectious, negative PCR), a presymptomatic phase (infectious, positive PCR), a symptomatic phase (infectious, positive PCR), a postsymptomatic phase (not infectious, positive PCR) and a postdetection phase (not infectious, negative PCR).
+The CovidStrategyCalculator (CSC) calculates the residual risk, risk reduction and test efficacy for arbitrary testing and  quarantine strategies. Where risk is defined as the probability that an individual, who is released from quarantine/isolation, is- or may become infectious and potentially spread the disease.
 
-**Disclaimer: CSC is in active development and is pending peer review. We strongly advice to re-build the tool from source before usage to ensure you have the latest version, and to use caution and sanity check your results.**
+Underneath, we implemented the analytical solution of a stochastic transit compartment model of the infection time course that captures published temporal changes and variability in test sensitivities, incubation- and infectious periods, as well as times to symptom onset. The infection time course is modeled using five compartments: a pre-detection phase (not infectious, negative PCR), a pre-symptomatic phase (infectious, positive PCR), a symptomatic infectious phase (positive PCR), a post-infectious phase (symptomatic, positive PCR) and a post-detection phase (not infectious, negative PCR).
 
-## Table of contents
-* [Usage](#1-usage)
-* [Results](#2-results)
-* [Building from source](#3-building-from-source)
+The software allows full flexibility with regards to parameter choices, that, for example, determine the time-course of infection, the proportion of asymptomatic cases and the test sensitivity and much more. However, a set of default parameters is provided, that has been carefully derived by fitting the model’s parameters to available clinical and in-house data on the incubation time, the off-set of infectiousness after symptom onset or peak virus load, as well as the time-dependent test sensitivities.
 
-## 1. Usage
-The model configuration can be viewed and changed in the upper left corner of the main window.
-The configuration is split over three tabs: Strategy, Parameters and Prevalence estimator.
+## Software utilization
+![overview-image](images/overview.png)
+*Figure 1. Screenshot of CovidStrategyCalculator. A. The main window consists of four components: user input (1), a result log (2), time course trajectories (3) and test efficacy reports (4). Reported results include the pre-procedure risk (prevalence), post-procedure risk (residual risk) and fold risk reduction. B. Zoom-in on the strategy-related user input. C. Model parameter input tab. D. Prevalence estimator input tab.*
 
-CSC's main task is to calculate the residual risk of a strategy.
-The residual risk is defined as the probability of releasing infectious individuals, or individuals who are yet to become infectious, from quarantine or isolation.
+The emphasis in software design has been put on combining ease-of-use with maximal flexibility.  Figure 1A shows a screenshot of the strategy evaluation window of the tool, where the user can define what he/she wants to analyse, e.g. an arbitrary strategy (1). Simulating a chosen strategy, will depict the results table (2) and graphics regarding the assay sensitivity and relative risk profile (3), as well as numeric values regarding the time-dependent assay sensitivity (4) to ease the selection of times to perform diagnostic tests.
 
-### Mode
-We provide three scenarios, or 'modes', in which the residual risk of a strategy can be assessed. The mode of simulation can be selected in the drop down menu in the first row of the Strategy tab. Each mode has a different use-case:
+Figure 1B shows a zoom of the opening window: The different tabs allow to evaluate a strategy (5), set parameters (6) or perform a prevalence estimation (7).  In field (8), the user can select between the different modi of the software; i.e. to assess quarantine- and testing strategies for (i) contact management (known time of exposure), for (ii) incoming travelers from high-risk areas (unknown time of exposure), as well as to evaluate (iii) de-isolation strategies.
 
-* **exposure**: This mode is meant to assess strategies for contact person management.
-  * The simulation starts at the date of exposure and assumes successful transmission, i.e. there is a 100% probability of becoming infectious at the start of the simulation.
-  * Exposure mode assumes symptomatic screening. This means that individuals who develop symptoms are assumed to go into isolation. They will not be released at the end of the quarantine and thus do not pose risk.
-* **symptom onset**: This mode is meant to assess de-isolation strategies.
-  * The simulation starts at the date of symptom onset, i.e. there is a 100% probability of being infectious (and symptomatic) at the start of the simulation.
-* **prevalence estimation**: This mode is meant to assess strategies for incoming travelers.
-  * This simulation is two-fold. A preliminary simulation is run based on the incidence reports of the last five weeks. Based on these reports, the prevalence of individuals that are- or will become infectious, and the initial states of the main simulation are determined (see [Prevalence estimator](#prevalence-estimator) for more details).
-  * Prevalence estimation mode assumes symptomatic screening. Incoming travelers with symptoms are assumed to be denied entry or to go into isolation. Travelers who develop symptoms during the duration of the quarantine are assumed to go into isolation as well. In both cases, these individuals do no longer pose risk.
+In the **contact management mode**, the user sets the time passed since the putative infection (9), a duration of quarantine (10) and whether symptom screening is performed (checkbox in 11). Symptom screening would imply that an individual who develops symptoms is not released into society, but rather goes into isolation. The expected level of adherence to the chosen strategy can be set in (12). The user can also decide on whether diagnostic tests should be conducted during the quarantine time (check-boxes in 13), and if so, whether PCR-tests or antigen-based rapid diagnostic testing (RDT) should be performed. Pressing ‘run’ will then evaluate this user-defined strategy and depict the results in terms of the residual risk and the fold risk reduction in a table format on the right (field 2. in Figure 1A).
 
-### Strategy
-The intended duration of isolation/quarantine and the time points for SARS-CoV2 PCR tests can be set in the Strategy tab. By selecting a checkbox at day x, you indicate that a test should be performed on day x. You can plan multiple tests.  
-Additionally, a time delay since the start of the simulation can be enforced. For example, by setting the 'time passed since exposure' to 3 days, the simulation starts at day -3.
+When choosing the **incoming travelers mode** (field (8) in Figure 1B), the user is taken to the prevalence estimation subroutine of the software, Figure 1D: The user provides the incidence history of the past 5 weeks in the travelers’ origin country (17) and an estimate of the presumed proportion of cases that are actually detected (18). The button ‘estimate prevalence’ will estimate the prevalence, as well as the infection states that the traveler is likely to be in. By checking the box ‘use’ (19), the estimated prevalence will be used as initial condition for the quarantine strategy, Figure 1B, where the user can proceed as described above.
 
-### Parameters
-In the Parameters tab, the user can set the parameters of model, such as the residence times per phase of the infection and testing statistics such as the average sensitivity and specificity.
-These parameters can be tweaked to represent your data and are the responsibly of the user. We have merely provided realistic default values.
+In the **isolation mode**, the user can test strategies for the duration of isolation of infected individuals. The user’s options are similar to the modi described above, with the exception that a symptomatic screening is not possible (individuals in isolation are confirmed infected or have symptoms) and that the isolated individual starts in the infectious (symptomatic) phase.
 
-For the residence time parameters, you can provide a mean estimate and extreme values. The extreme values are used to calculate the uncertainty range of results.   
+In addition to these features, a user can  jump straight to the **prevalence estimator**, field (7) in Figure 1B or freely change the models’ default parameters (clicking on field (6) in Figure 1B will show the window depicted in Figure 1C) to customize the model. Figure 1C shows the model parameter input tab. Uncertainty ranges are calculated based on the extreme parameter values provided by the user (15). The percentage of asymptomatic cases also be defined by the user (16).
 
-The parameter for the percentage of asymptomatic infections (last row) is only used in the modes 'exposure' and 'prevalence estimation'. This parameter determines which percentage of individuals in the symptomatic phase is NOT filtered out by the symptomatic screening. By changing this parameter to 100%, the assumption of symptomatic screening is dropped.
-
-### Prevalence estimator
-This tab is part of the mode 'prevalence estimation' but can also be used on its own to estimate the prevalence of individuals that are- or will become infectious, and the percent of the population in each phase of infection for a given region. The estimation is based on the incidence reports of the last 5 weeks. The reported cases are transformed to probabilities per day and distributed over the first four compartment of the model. For each of the last 35 days, a simulation is run to propagate the states said number of days. The final states of these simulations are summed and reported.
-
-## 2. Results
-The simulation calculates the residual risk and the fold risk reduction for the provided strategy. The results are reported in the result log in the upper right corner. The pre-procedure risk is the risk at the start of the simulation and the post-procedure risk is the risk at the last day of the quarantine/isolation.
-Per result three values are reported: a mean estimate and the range of uncertainty based on the provided extreme values.
-
-In the lower panel a chart and table are shown.
-The chart can be used to determine the best time to place a test. The red curve represents the probability of becoming- or already being infectious, i.e. the probability of being in the incubation or symptomatic phase of the disease. No symptomatic screening is assumed. The black curve depicts the probability of infection and that infection being detectable.
-Below the graph the test efficacy per day is stated. Again, three values are reported: a mean estimate and the range of uncertainty based on the provided extreme values.
-
-
-## 3. Building from source
+## Building from source
 The CSC application can be compiled from source using the Qt5 framework. CSC requires the Eigen 3.3.7 library. When building from source, the path to the Eigen source code (root folder) has to be set in the
 `src/CovidTestCalculator.pro` file:
 
